@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace dialogtool
 {
@@ -47,7 +49,7 @@ namespace dialogtool
         
         // Mapping URIs generation
 
-        public static string[] GetMappingURIs(DialogVariablesSimulator dialogVariablesSimulator, MappingUriConfig mappingUriConfig, out bool redirectToLongTail)
+        public static string[] GenerateMappingURIs(DialogVariablesSimulator dialogVariablesSimulator, MappingUriConfig mappingUriConfig, out bool redirectToLongTail)
         {
             // Redirect to long tail ?
             var redirectToLongTailVariableName = mappingUriConfig == MappingUriConfig.Insurance ? Insurance_RedirectToLongTailVariable : Savings_RedirectToLongTailVariable;
@@ -129,6 +131,55 @@ namespace dialogtool
                 }
             }
             return result;
+        }
+
+        public static string ComputeMappingURI(IDictionary<string, string> variablesValues, MappingUriConfig mappingUriConfig, out bool redirectToLongTail)
+        {
+            // Redirect to long tail ?
+            var redirectToLongTailVariableName = mappingUriConfig == MappingUriConfig.Insurance ? Insurance_RedirectToLongTailVariable : Savings_RedirectToLongTailVariable;
+            string redirectToLongTailValue = null;
+            variablesValues.TryGetValue(redirectToLongTailVariableName, out redirectToLongTailValue);
+            redirectToLongTail = redirectToLongTailValue == "yes";
+            if (redirectToLongTail)
+            {
+                return null;
+            }
+
+            // Deduce subdomain from entity name
+            string[][] deduceVariableValues = mappingUriConfig == MappingUriConfig.Insurance ? Insurance_DeduceVariableValues : Savings_DeduceVariableValues;
+            foreach (var deduceVariableStrings in deduceVariableValues)
+            {
+                var inspectedVariable = deduceVariableStrings[0];
+                var searchPattern = deduceVariableStrings[1];
+                var targetVariable = deduceVariableStrings[2];
+                var targetValue = deduceVariableStrings[3];
+
+                string inspectedValue = null;
+                variablesValues.TryGetValue(inspectedVariable, out inspectedValue);
+                if (inspectedValue != null && inspectedValue.Contains(searchPattern))
+                {
+                    variablesValues[targetVariable] = targetValue;
+                }
+            }
+
+            // Generate mapping URIs
+            string[][] mappingUriSegments = mappingUriConfig == MappingUriConfig.Insurance ? Insurance_MappingUriSegments : Savings_MappingUriSegments;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < mappingUriSegments.Length; i++)
+            {
+                string mappingUriValue = null;
+                if (variablesValues.TryGetValue(mappingUriSegments[i][1], out mappingUriValue))
+                {
+                    if (!String.IsNullOrEmpty(mappingUriValue))
+                    {
+                        sb.Append('/');
+                        sb.Append(mappingUriSegments[i][0]);
+                        sb.Append('/');
+                        sb.Append(mappingUriValue);
+                    }
+                }
+            }
+            return sb.ToString();
         }
     }
 }

@@ -444,10 +444,10 @@ namespace dialogtool
 
         public override string ToString()
         {
-            var beforeSubstitution = TextReplacedWithConcepts.Substring(0, StartIndex);
-            var afterSubstitution = TextReplacedWithConcepts.Substring(StopIndex + 1, TextReplacedWithConcepts.Length - StopIndex);
-            var sentenceBefore = beforeSubstitution + ">>" + MatchedWord + "<<" + afterSubstitution;
-            return "entity '" + EntityValue.Entity.Name + "' : \"" + sentenceBefore + "\" => entity value \'" + EntityValue.CanonicalValue + "\'";
+            //var beforeSubstitution = TextReplacedWithConcepts.Substring(0, StartIndex);
+            //var afterSubstitution = TextReplacedWithConcepts.Substring(StopIndex + 1, TextReplacedWithConcepts.Length - StopIndex);
+            //var sentenceBefore = beforeSubstitution + ">>" + MatchedWord + "<<" + afterSubstitution;
+            return "entity '" + EntityValue.Entity.Name + "' : matched \"" + MatchedWord + "\" as \'" + EntityValue.Name + "\'";
         }
     }
 

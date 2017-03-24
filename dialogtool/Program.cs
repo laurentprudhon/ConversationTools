@@ -366,9 +366,6 @@ namespace dialogtool
 
         private static void CompareResultsAcrossDialogVersions(FileInfo newSourceOrDialogFileInfo, FileInfo oldSourceOrDialogFileInfo, FileInfo annotatedQuestionsFileInfo)
         {
-            Console.WriteLine("dialogtool command \"compare\" not yet implemented");
-            return;
-
             Console.WriteLine("Compare results for two dialog files :");
             Console.WriteLine();
 
@@ -383,36 +380,42 @@ namespace dialogtool
             // Load all questions
             Console.WriteLine("Reading " + annotatedQuestionsFileInfo.Name + " ... ");
             int questionCount = 0;
-            using (StreamReader sr = new StreamReader(annotatedQuestionsFileInfo.FullName))
+            IList<string> impacts = new List<string>();
+            using (StreamReader sr = new StreamReader(annotatedQuestionsFileInfo.FullName, Encoding.GetEncoding("iso8859-1")))
             {
                 string line = null;
                 while((line = sr.ReadLine()) != null)
                 {
                     string[] columns = line.Split(';');
-                    int questionId = Int32.Parse(columns[0]);
+                    string questionId = columns[0];
                     string questionText = columns[1];
                     string intentName = columns[2];
 
                     // Simulate new dialog execution 
-                    var newResult = DialogInterpreter.AnalyzeQuestion(newDialog, questionId, questionText, intentName);
+                    var newResult = DialogInterpreter.AnalyzeInitialQuestion(newDialog, questionId, questionText, intentName);
 
                     // Simulate old dialog execution 
-                    var oldResult = DialogInterpreter.AnalyzeQuestion(oldDialog, questionId, questionText, intentName);
+                    var oldResult = DialogInterpreter.AnalyzeInitialQuestion(oldDialog, questionId, questionText, intentName);
 
                     // Compare results
-                    if(!newResult.IsIdenticalTo(oldResult))
+                    if(!newResult.ReturnsSameResultAs(oldResult))
                     {
-                        // ...
+                        impacts.Add(newResult.QuestionId + ";" + newResult.QuestionText + ";" + newResult.ToString() + ";" + oldResult.ToString());
                     }
 
                     questionCount++;
                     if(questionCount % 500 == 0)
                     {
-                        Console.WriteLine(questionCount + "questions analyzed");
+                        Console.WriteLine(questionCount + " test set questions analyzed");
                     }
                 }
+
+                // TO DO : do the same thing with all DisambiguationQuestion nodes found in the tree
             }
-            Console.WriteLine("Analysis completed");
+            Console.WriteLine("OK");
+
+            Console.WriteLine("Analysis completed :");
+            Console.WriteLine("- impacts found on " + impacts.Count + " questions of the test set");
             Console.WriteLine("");
 
             // Write comparison results file
@@ -421,7 +424,10 @@ namespace dialogtool
             HashSet<string> mappingURISet = new HashSet<string>();
             using (StreamWriter sw = new StreamWriter(comparisonFilePath, false, Encoding.GetEncoding("iso8859-1")))
             {
-                //.. 
+                foreach(var impact in impacts)
+                {
+                    sw.WriteLine(impact);
+                }
             }
             Console.WriteLine("OK");
             Console.WriteLine("");

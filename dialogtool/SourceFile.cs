@@ -181,28 +181,14 @@ namespace dialogtool
         private static void WriteDialogVariableConditions(XmlWriter xw, DialogVariableConditions childNode)
         {
             xw.WriteStartElement("If");
-            var op = childNode.Operator.ToString().ToLower();
-            string expression = null;
-            foreach (var cond in childNode.VariableConditions)
-            {
-                if(expression != null)
-                {
-                    expression += " " + op + " ";
-                }
-                if (cond.Comparison == ConditionComparison.HasValue)
-                {
-                    expression += cond.VariableName + " has value";
-                }
-                else
-                {
-                    expression += cond.VariableName + "='" + cond.Value + "'";
-                }
-            }
+            string expression = childNode.Expression;
             xw.WriteAttributeString("Expr", expression);
-            WriteDialogNodeProperties(xw, childNode);            
+            WriteDialogNodeProperties(xw, childNode);
             WriteChildrenNodes(xw, childNode);
             xw.WriteEndElement();
         }
+
+        
 
         private static void WriteSwitchOnEntityVariables(XmlWriter xw, SwitchOnEntityVariables childNode)
         {

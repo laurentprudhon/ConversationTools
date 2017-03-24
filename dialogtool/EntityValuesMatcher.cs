@@ -40,13 +40,17 @@ namespace dialogtool
                         replacementText += "}";
 
                     }
-                    var conceptSubstitution = new ConceptSubstitution(originalText, startIndex, stopIndex, replacementConceptGroup, replacementText);
-                    conceptSubstitutions.Add(conceptSubstitution);
 
-                    var beforeSubstitution = textReplacedWithConcepts.Substring(0, startIndex + replacementOffset);
-                    var afterSubstitution = textReplacedWithConcepts.Substring(stopIndex + replacementOffset + 1, textReplacedWithConcepts.Length - stopIndex - replacementOffset - 1);
-                    textReplacedWithConcepts = beforeSubstitution + replacementText + afterSubstitution;
-                    replacementOffset += replacementText.Length - (stopIndex - startIndex + 1);
+                    if (replacementText != synonym)
+                    {
+                        var conceptSubstitution = new ConceptSubstitution(originalText, startIndex, stopIndex, replacementConceptGroup, replacementText);
+                        conceptSubstitutions.Add(conceptSubstitution);
+
+                        var beforeSubstitution = textReplacedWithConcepts.Substring(0, startIndex + replacementOffset);
+                        var afterSubstitution = textReplacedWithConcepts.Substring(stopIndex + replacementOffset + 1, textReplacedWithConcepts.Length - stopIndex - replacementOffset - 1);
+                        textReplacedWithConcepts = beforeSubstitution + replacementText + afterSubstitution;
+                        replacementOffset += replacementText.Length - (stopIndex - startIndex + 1);
+                    }
                 }
             }
 

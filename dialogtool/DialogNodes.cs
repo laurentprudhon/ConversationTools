@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace dialogtool
 {
@@ -64,6 +65,11 @@ namespace dialogtool
         {
             EntityMatches.Add(entityMatch);            
         }
+
+        public override string ToString()
+        {
+            return "Intent:" + Name;
+        }
     }
 
     public class EntityMatch
@@ -96,7 +102,12 @@ namespace dialogtool
             EntityMatch = entityMatch;
         }
 
-        public EntityMatch EntityMatch { get; private set; }       
+        public EntityMatch EntityMatch { get; private set; }
+
+        public override string ToString()
+        {
+            return "SwitchOn:" + EntityMatch.EntityName;
+        }
     }
 
     public class DialogVariableConditions : DialogNode
@@ -112,6 +123,36 @@ namespace dialogtool
 
         public IList<DialogVariableCondition> VariableConditions { get; private set; }
         public ConditionOperator Operator { get; private set; }
+
+        public string Expression
+        {
+            get
+            {
+                var op = Operator.ToString().ToLower();
+                string expression = null;
+                foreach (var cond in VariableConditions)
+                {
+                    if (expression != null)
+                    {
+                        expression += " " + op + " ";
+                    }
+                    if (cond.Comparison == ConditionComparison.HasValue)
+                    {
+                        expression += cond.VariableName + " has value";
+                    }
+                    else
+                    {
+                        expression += cond.VariableName + "='" + cond.Value + "'";
+                    }
+                }
+                return expression;
+            }
+        }
+
+        public override string ToString()
+        {
+            return "If:" + Expression;
+        }
     }
 
     public class DialogVariableCondition
@@ -238,6 +279,25 @@ namespace dialogtool
                 }
             }
         }
+
+        public override string ToString()
+        {
+            var txt = "DisambiguationQuestion:";
+            bool isFirst = true;
+            foreach (var option in DisambiguationOptions)
+            {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    txt += " or ";
+                }
+                txt += option.EntityValue.Entity.Name + "='" + option.EntityValue.Name + "'";                
+            }
+            return txt;
+        }
     }
 
     public class DisambiguationOption
@@ -281,6 +341,11 @@ namespace dialogtool
 
         public string MessageExpression { get; private set; }
         public string MessageText { get; private set; }
+
+        public override string ToString()
+        {
+            return "Goto:" + TargetNodeId;
+        }
     }
 
     public class DirectAnswer : GotoNode
@@ -289,6 +354,11 @@ namespace dialogtool
             base(parentNode, targetNodeId, messageExpression, messageText, errors)
         {
             Type = DialogNodeType.DirectAnswer;
+        }
+
+        public override string ToString()
+        {
+            return "DirectAnswer:" + MessageText;
         }
     }
 
@@ -305,11 +375,34 @@ namespace dialogtool
         public void GenerateMappingUris(DialogVariablesSimulator dialogVariables, MappingUriGenerator.MappingUriConfig mappingUriConfig)
         {
             bool redirectToLongTail;
-            MappingUris = MappingUriGenerator.GetMappingURIs(dialogVariables, mappingUriConfig, out redirectToLongTail);
+            MappingUris = MappingUriGenerator.GenerateMappingURIs(dialogVariables, mappingUriConfig, out redirectToLongTail);
             if (redirectToLongTail)
             {
                 Type = DialogNodeType.RedirectToLongTail;
             }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder("FatHeadAnswers");
+            if (MappingUris != null && MappingUris.Length > 0)
+            {
+                sb.Append(':');
+                bool isFirst = true;
+                foreach(string mappingUri in MappingUris)
+                {
+                    if(isFirst)
+                    {
+                        isFirst = false;
+                    }
+                    else
+                    {
+                        sb.Append("|");
+                    }
+                    sb.Append(mappingUri);
+                }
+            }
+            return sb.ToString();
         }
     }
 
@@ -319,6 +412,11 @@ namespace dialogtool
             base(parentNode, targetNodeId, messageExpression, messageText, errors)
         {
             Type = DialogNodeType.RedirectToLongTail;
+        }
+
+        public override string ToString()
+        {
+            return "RedirectToLongTail";
         }
     }
 }
