@@ -286,11 +286,19 @@ namespace dialogtool
             var intent = new MatchIntentAndEntities(parentFolder, intentName);
             SetDialogNodeIdAndLineNumberAndVariableAssignments(intent, intentInput, intentInput, dialogVariables, dialog);
             intent.Questions = intentQuestions;
-            dialog.AddIntent(intent, dialogVariables);            
+            dialog.AddIntent(intent, dialogVariables);
 
             // Match entities and check their value
+            bool isFirstChild = true;
+            XElement switchSecondIfElement = null;
+            DialogNode inlineSwitchDialogNode = null;
             foreach (var inputChildElement in intentInput.Elements().Where(elt => elt.Attribute("isOffline") == null))
             {
+                if (inputChildElement == switchSecondIfElement)
+                {
+                    inlineSwitchDialogNode = null;
+                    continue;
+                }
                 switch (inputChildElement.Name.LocalName)
                 {
                     case "grammar":
@@ -301,7 +309,7 @@ namespace dialogtool
                         intent.AddEntityMatch(entityMatch);
                         break;
                     case "if":
-                        AnalyzeDialogVariableConditions(intent, inputChildElement, dialogVariables);
+                        AnalyzeDialogVariableConditions(inlineSwitchDialogNode == null ? intent : inlineSwitchDialogNode, inputChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode, ref switchSecondIfElement);
                         break;
                     case "output":
                         if (DetectDisambiguationQuestion(inputChildElement))
@@ -316,6 +324,7 @@ namespace dialogtool
                     default:
                         throw new Exception("Line " + ((IXmlLineInfo)inputChildElement).LineNumber + " : Unexpected child element " + inputChildElement.Name + " below <input>");
                 }
+                isFirstChild = false;
             }
         }
 
@@ -451,11 +460,18 @@ namespace dialogtool
                                 throw new Exception("Line " + ((IXmlLineInfo)action).LineNumber + " : Unexpected action operator " + operatorName);
                         }
                         var variableValue = action.Value;
-                        var variableAssignment = new DialogVariableAssignment(variableName, @operator, variableValue);
-                        dialog.LinkVariableAssignmentToVariable(dialogNode, variableAssignment);
-                        if (dialogVariables.AddDialogVariableAssignment(variableAssignment))
+                        if (variableValue.Trim().StartsWith("{") && variableValue.Trim().EndsWith(":name}"))
                         {
-                            dialogNode.AddVariableAssignment(variableAssignment);
+                            dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.IncorrectPattern, "Unsupported variable to variable value assignment : " + variableValue + " => " + variableName);
+                        }
+                        else
+                        {
+                            var variableAssignment = new DialogVariableAssignment(variableName, @operator, variableValue);
+                            dialog.LinkVariableAssignmentToVariable(dialogNode, variableAssignment);
+                            if (dialogVariables.AddDialogVariableAssignment(variableAssignment))
+                            {
+                                dialogNode.AddVariableAssignment(variableAssignment);
+                            }
                         }
                     }
                 }
@@ -532,15 +548,23 @@ namespace dialogtool
             dialogVariables.AddDisambiguationQuestion(disambiguationQuestion);
 
             // Children nodes of disambiguation question
+            bool isFirstChild = true;
+            XElement switchSecondIfElement = null;
+            DialogNode inlineSwitchDialogNode = null;
             foreach (var getUserInputChildElement in getUserInput.Elements().Where(elt => elt.Attribute("isOffline") == null))
             {
+                if (getUserInputChildElement == switchSecondIfElement)
+                {
+                    inlineSwitchDialogNode = null;
+                    continue;
+                }
                 switch (getUserInputChildElement.Name.LocalName)
                 {
                     case "input":
                     case "action":
                         continue;
                     case "if":
-                        AnalyzeDialogVariableConditions(disambiguationQuestion, getUserInputChildElement, dialogVariables);
+                        AnalyzeDialogVariableConditions(inlineSwitchDialogNode == null ? disambiguationQuestion : inlineSwitchDialogNode, getUserInputChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode, ref switchSecondIfElement);
                         break;
                     case "output":
                     case "goto":
@@ -549,6 +573,7 @@ namespace dialogtool
                     default:
                         throw new Exception("Line " + ((IXmlLineInfo)getUserInputChildElement).LineNumber + " : Unexpected child element " + getUserInputChildElement.Name + " below <getUserInput>");
                 }
+                isFirstChild = false;
             }
 
             // Optional last output node after getUserInput
@@ -673,7 +698,7 @@ namespace dialogtool
             }
         }
         
-        private void AnalyzeDialogVariableConditions(DialogNode parentNode, XElement ifElement, DialogVariablesSimulator dialogVariables)
+        private void AnalyzeDialogVariableConditions(DialogNode parentNode, XElement ifElement, DialogVariablesSimulator dialogVariables, bool isFirstElement, ref DialogNode inlineSwitchDialogNode, ref XElement switchSecondIfElement)
         {
             /*
             if/cond/()        
@@ -724,9 +749,11 @@ namespace dialogtool
                 variableConditions.Add(variableCondition);
             }
 
-            // Special case : SwitchOnEntityVariables pattern
-            XElement switchSecondIfElement = null;
+
             DialogNode dialogNode = null;
+
+            // Special case : SwitchOnEntityVariables pattern
+            // -> PATTERN 1 : enclosing HasValue condition
             if(variableConditions.Count == 1)
             {
                 var uniqueCondition = variableConditions[0];
@@ -743,25 +770,60 @@ namespace dialogtool
                     }
                     if (relatedEntityMatch != null)
                     {
-                        var lastIfChild = ifElement.Elements().Last();
-                        if (lastIfChild != null && (lastIfChild.Name.LocalName == "goto" 
-                            || (lastIfChild.Name.LocalName == "output" && lastIfChild.Element("goto") != null)))
-                        {
-                            var beforeLastIfChild = (XElement)lastIfChild.PreviousNode;
-                            if (beforeLastIfChild != null && beforeLastIfChild.Name.LocalName == "if")
+                        var lastIfChild = ifElement.Elements("if").LastOrDefault();
+                        if (lastIfChild != null)
+                        {                            
+                            var cond = lastIfChild.Element("cond");
+                            if(cond != null)
                             {
-                                switchSecondIfElement = beforeLastIfChild;
-                                var cond = switchSecondIfElement.Element("cond");
-                                if(cond != null)
+                                if(cond.Attribute("varName").Value == relatedEntityMatch.EntityVariableName2 &&
+                                    cond.Attribute("operator").Value == "HAS_VALUE")
                                 {
-                                    if(cond.Attribute("varName").Value == relatedEntityMatch.EntityVariableName2 &&
-                                       cond.Attribute("operator").Value == "HAS_VALUE")
-                                    {
-                                        var switchOnEntityVariables = new SwitchOnEntityVariables(parentNode, relatedEntityMatch);
-                                        SetDialogNodeIdAndLineNumberAndVariableAssignments(switchOnEntityVariables, ifElement, ifElement, dialogVariables, dialog);
-                                        parentNode.ChildrenNodes.Add(switchOnEntityVariables);
-                                        dialogNode = switchOnEntityVariables;
-                                    }
+                                    switchSecondIfElement = lastIfChild;
+
+                                    var switchOnEntityVariables = new SwitchOnEntityVariables(parentNode, relatedEntityMatch);
+                                    SetDialogNodeIdAndLineNumberAndVariableAssignments(switchOnEntityVariables, ifElement, ifElement, dialogVariables, dialog);
+                                    parentNode.ChildrenNodes.Add(switchOnEntityVariables);
+                                    dialogNode = switchOnEntityVariables;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // -> PATTERN 2 : no enclosing HasValue condition
+            if(dialogNode == null && parentNode.Type != DialogNodeType.SwitchOnEntityVariables && isFirstElement && variableConditions.Count > 0)
+            {
+                var firstCondition = variableConditions[0];
+                if (firstCondition.Comparison == ConditionComparison.Equals)
+                {
+                    EntityMatch relatedEntityMatch = null;
+                    foreach (var entityMatch in dialogVariables.LastEntityMatches)
+                    {
+                        if (firstCondition.VariableName == entityMatch.EntityVariableName1)
+                        {
+                            relatedEntityMatch = entityMatch;
+                            break;
+                        }
+                    }
+                    if (relatedEntityMatch != null)
+                    {
+                        var lastIfSibling = ifElement.Parent.Elements("if").LastOrDefault();
+                        if (lastIfSibling != null)
+                        {
+                            var cond = lastIfSibling.Element("cond");
+                            if (cond != null)
+                            {
+                                if (cond.Attribute("varName").Value == relatedEntityMatch.EntityVariableName2 &&
+                                    cond.Attribute("operator").Value == "HAS_VALUE")
+                                {
+                                    switchSecondIfElement = lastIfSibling;
+
+                                    var switchOnEntityVariables = new SwitchOnEntityVariables(parentNode, relatedEntityMatch);
+                                    SetDialogNodeIdAndLineNumberAndVariableAssignments(switchOnEntityVariables, ifElement, ifElement, dialogVariables, dialog);
+                                    parentNode.ChildrenNodes.Add(switchOnEntityVariables);
+                                    inlineSwitchDialogNode = switchOnEntityVariables;
+                                    parentNode = inlineSwitchDialogNode;
                                 }
                             }
                         }
@@ -787,10 +849,18 @@ namespace dialogtool
             }
 
             // Children nodes of dialog variables conditions
+            bool isFirstChild = true;
+            XElement switchSecondIfElementLevel2 = null;
+            DialogNode inlineSwitchDialogNode2 = null;
             foreach (var ifChildElement in ifElement.Elements().Where(elt => elt.Attribute("isOffline") == null))
             {
                 if(ifChildElement == switchSecondIfElement)
                 {
+                    continue;
+                }
+                if (ifChildElement == switchSecondIfElementLevel2)
+                {
+                    inlineSwitchDialogNode2 = null;
                     continue;
                 }
                 switch (ifChildElement.Name.LocalName)
@@ -799,7 +869,7 @@ namespace dialogtool
                     case "action":
                         continue;
                     case "if":
-                        AnalyzeDialogVariableConditions(dialogNode, ifChildElement, dialogVariables);
+                        AnalyzeDialogVariableConditions(inlineSwitchDialogNode2 == null ? dialogNode : inlineSwitchDialogNode2, ifChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode2, ref switchSecondIfElementLevel2);
                         break;
                     case "output":
                         if (DetectDisambiguationQuestion(ifChildElement))
@@ -817,6 +887,7 @@ namespace dialogtool
                     default:
                         throw new Exception("Line " + ((IXmlLineInfo)ifChildElement).LineNumber + " : Unexpected child element " + ifChildElement.Name + " below <if>");
                 }
+                isFirstChild = false;
             }
         }
         
