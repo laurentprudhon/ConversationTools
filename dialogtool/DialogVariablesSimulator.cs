@@ -6,15 +6,18 @@ namespace dialogtool
 {
     public class DialogVariablesSimulator
     {
-        public DialogVariablesSimulator(IDictionary<string, DialogVariable> variables)
+        public DialogVariablesSimulator(IDictionary<string, DialogVariable> variables, IEnumerable<string> entityVariablesNames)
         {
             Variables = variables;
             VariablesValues = new Dictionary<DialogVariable, IList<string>>();
+            this.entityVariablesNames = entityVariablesNames;
         }
 
         public IDictionary<string, DialogVariable> Variables { get; private set; }
 
         public IDictionary<DialogVariable, IList<string>> VariablesValues { get; private set; }
+
+        private IEnumerable<string> entityVariablesNames { get; set; }
 
         public IList<EntityMatch> LastEntityMatches { get; private set; }
 
@@ -51,29 +54,49 @@ namespace dialogtool
             return variablesChanged;
         }
 
-        public bool AddDialogVariableAssignment(DialogVariableAssignment variableAssignment)
+        public bool AddDialogVariableAssignment(DialogVariableAssignment variableAssignment, DialogNodeType nodeType)
         {
             switch (variableAssignment.Operator)
             {
                 case DialogVariableOperator.SetTo:
                 case DialogVariableOperator.SetToYes:
-                case DialogVariableOperator.SetToNo:
+                case DialogVariableOperator.SetToNo:      
+                    // Filter out all cases when variable assignment is not useful to simplify the code
                     if (VariablesValues.ContainsKey(variableAssignment.Variable) &&
-                        VariablesValues[variableAssignment.Variable].Count == 1 &&
-                        VariablesValues[variableAssignment.Variable][0] == variableAssignment.Value)
+                        VariablesValues[variableAssignment.Variable].Count == 1)
                     {
-                        return false;
+                        var previousValue = VariablesValues[variableAssignment.Variable][0];
+                        // Case 1 : value not changed => variable assignment is not useful
+                        if (previousValue == variableAssignment.Value)
+                        {
+                            return false;
+                        }                       
                     }
-                    else
-                    {
-                        var values = new List<string>(1);
-                        values.Add(variableAssignment.Value);
-                        VariablesValues[variableAssignment.Variable] = values;
-                        return true;
-                    }
+                    var values = new List<string>(1);
+                    values.Add(variableAssignment.Value);
+                    VariablesValues[variableAssignment.Variable] = values;
+                    return true;
                 case DialogVariableOperator.SetToBlank:
                     if (VariablesValues.ContainsKey(variableAssignment.Variable))
                     {
+                        if (VariablesValues[variableAssignment.Variable].Count == 1 &&
+                            entityVariablesNames.Contains(variableAssignment.VariableName))
+                        {
+                            var previousValue = VariablesValues[variableAssignment.Variable][0];
+                            // Case 2 : the default behavior of FatHeadAnswer
+                            // is to reset all entity variables not explicitly set => variable assignment is not useful
+                            if (nodeType == DialogNodeType.FatHeadAnswers && (String.IsNullOrEmpty(previousValue) || previousValue.StartsWith("$(")))
+                            {
+                                return false;
+                            }
+                            // Case 3 : the default behavior of RedirectToLongTail / DirectAnswer
+                            // is to reset all entity variables n=> variable assignment is not useful
+                            else if ((nodeType == DialogNodeType.RedirectToLongTail || nodeType == DialogNodeType.DirectAnswer))
+                            {
+                                return false;
+                            }
+                        }
+
                         VariablesValues.Remove(variableAssignment.Variable);
                         return true;
                     }
@@ -90,15 +113,35 @@ namespace dialogtool
         {
             var intentVariable = Variables["CLASSIFIER_CLASS_0"];
             var variableAssignment = new DialogVariableAssignment(intentVariable, DialogVariableOperator.SetTo, intent.Name);
-            AddDialogVariableAssignment(variableAssignment);
-
-            LastEntityMatches = intent.EntityMatches;
+            AddDialogVariableAssignment(variableAssignment, intent.Type);
+            AddEntityMatches(intent.EntityMatches);
         }
-
+        
         public void AddDisambiguationQuestion(DisambiguationQuestion question)
         {
-            LastEntityMatches = new List<EntityMatch>(1);
-            LastEntityMatches.Add(question.EntityMatch);
+            var entityMatches = new List<EntityMatch>(1);
+            entityMatches.Add(question.EntityMatch);
+            AddEntityMatches(entityMatches);
+        }
+
+        private void AddEntityMatches(IList<EntityMatch> entityMatches)
+        {
+            LastEntityMatches = entityMatches;
+            foreach(var entityMatch in LastEntityMatches)
+            {                
+                if (entityMatch.EntityVariable1 != null)
+                {
+                    var values = new List<string>(1);
+                    values.Add("$(" + entityMatch.Entity.Name + ")[1]");
+                    VariablesValues[entityMatch.EntityVariable1] = values;
+                }
+                if (entityMatch.EntityVariable2 != null)
+                {
+                    var values = new List<string>(1);
+                    values.Add("$(" + entityMatch.Entity.Name + ")[2]");
+                    VariablesValues[entityMatch.EntityVariable2] = values;
+                }
+            }
         }
 
         public string TryGetVariableValue(string variableName)
@@ -133,10 +176,10 @@ namespace dialogtool
             }
         }
 
-        public bool SetVariableValue(string variableName, string value)
+        public bool SetVariableValue(string variableName, string value, DialogNodeType nodeType)
         {
             return AddDialogVariableAssignment(
-                new DialogVariableAssignment(Variables[variableName], DialogVariableOperator.SetTo, value));
+                new DialogVariableAssignment(Variables[variableName], DialogVariableOperator.SetTo, value), nodeType);
         }
 
         public Entity TryGetEntityFromVariable(DialogVariable variable)
@@ -156,13 +199,45 @@ namespace dialogtool
 
         public DialogVariablesSimulator Clone()
         {
-            var nestedVariableSimulator = new DialogVariablesSimulator(Variables);
+            var nestedVariableSimulator = new DialogVariablesSimulator(Variables, entityVariablesNames);
             foreach (var variable in VariablesValues.Keys)
             {
                 nestedVariableSimulator.VariablesValues[variable] = VariablesValues[variable];
             }
             nestedVariableSimulator.LastEntityMatches = LastEntityMatches;
             return nestedVariableSimulator;
+        }
+
+        internal DialogVariable[] ResetEntityVariablesNotExplicitlySet(IEnumerable<string> entityVariableNames)
+        {
+            IList<DialogVariable> result = new List<DialogVariable>();
+            foreach (var entityVariableName in entityVariableNames)
+            {
+                DialogVariable entityVariable = null;
+                Variables.TryGetValue(entityVariableName, out entityVariable);
+                if (entityVariable != null)
+                {
+                    if (!VariablesValues.ContainsKey(entityVariable) || 
+                        VariablesValues[entityVariable].Count == 0)
+                    {
+                        result.Add(entityVariable);
+                    }
+                    else if(VariablesValues[entityVariable].Count == 1)
+                    {
+                        var value = VariablesValues[entityVariable][0];
+                        if(String.IsNullOrEmpty(value)) 
+                        {
+                            result.Add(entityVariable);
+                        }
+                        else if(value.StartsWith("$("))
+                        {
+                            VariablesValues.Remove(entityVariable);
+                            result.Add(entityVariable);
+                        }
+                    }
+                }
+            }
+            return result.ToArray();
         }
     }
 }

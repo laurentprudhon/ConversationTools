@@ -370,10 +370,12 @@ namespace dialogtool
             Type = DialogNodeType.FatHeadAnswers;
         }
 
+        public DialogVariable[] EntityVariablesNotExplicitlySet { get; private set; }
         public string[] MappingUris { get; private set; }
 
         public void GenerateMappingUris(DialogVariablesSimulator dialogVariables, MappingUriGenerator.MappingUriConfig mappingUriConfig)
         {
+            EntityVariablesNotExplicitlySet = dialogVariables.ResetEntityVariablesNotExplicitlySet(MappingUriGenerator.GetEntityVariables(mappingUriConfig));
             bool redirectToLongTail;
             MappingUris = MappingUriGenerator.GenerateMappingURIs(dialogVariables, mappingUriConfig, out redirectToLongTail);
             if (redirectToLongTail)

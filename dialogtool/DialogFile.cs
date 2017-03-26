@@ -245,7 +245,7 @@ namespace dialogtool
             */
             foreach (var intentInput in intentsFolder.Elements("input").Where(elt => elt.Attribute("isOffline") == null))
             {
-                AnalyzeMatchIntentAndEntities(parentFolder, intentInput, new DialogVariablesSimulator(dialog.Variables));
+                AnalyzeMatchIntentAndEntities(parentFolder, intentInput, new DialogVariablesSimulator(dialog.Variables, MappingUriGenerator.GetEntityVariables(dialog.MappingUriConfig)));
             }
         }
 
@@ -286,6 +286,13 @@ namespace dialogtool
             var intent = new MatchIntentAndEntities(parentFolder, intentName);
             SetDialogNodeIdAndLineNumberAndVariableAssignments(intent, intentInput, intentInput, dialogVariables, dialog);
             intent.Questions = intentQuestions;
+
+            // Analyze entity matches
+            foreach (var inputChildElement in intentInput.Elements("input").Where(elt => elt.Attribute("isOffline") == null))
+            {
+                var entityMatch = AnalyzeEntityMatch(intent, inputChildElement);
+                intent.AddEntityMatch(entityMatch);
+            }
             dialog.AddIntent(intent, dialogVariables);
 
             // Match entities and check their value
@@ -303,11 +310,8 @@ namespace dialogtool
                 {
                     case "grammar":
                     case "action":
-                        continue;
                     case "input":
-                        var entityMatch = AnalyzeEntityMatch(intent, inputChildElement);
-                        intent.AddEntityMatch(entityMatch);
-                        break;
+                        continue;
                     case "if":
                         AnalyzeDialogVariableConditions(inlineSwitchDialogNode == null ? intent : inlineSwitchDialogNode, inputChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode, ref switchSecondIfElement);
                         break;
@@ -459,16 +463,30 @@ namespace dialogtool
                             default:
                                 throw new Exception("Line " + ((IXmlLineInfo)action).LineNumber + " : Unexpected action operator " + operatorName);
                         }
-                        var variableValue = action.Value;
-                        if (variableValue.Trim().StartsWith("{") && variableValue.Trim().EndsWith(":name}"))
+                        var variableValue = action.Value.Trim();
+                        // Check for variable reference expression
+                        if (variableValue.StartsWith("{") && variableValue.EndsWith("}"))
                         {
-                            dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.IncorrectPattern, "Unsupported variable to variable value assignment : " + variableValue + " => " + variableName);
+                            if (variableValue.EndsWith(":name}"))
+                            {
+                                dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.IncorrectPattern, "Unsupported variable internal field to variable value assignment : " + variableValue + " => " + variableName);
+                                variableValue = null;
+                            }
+                            else
+                            {
+                                var refVarName = variableValue.Substring(1, variableValue.Length - 2);
+                                variableValue = dialogVariables.TryGetVariableValue(refVarName);
+                                if(variableValue == null)
+                                {
+                                    dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.InvalidReference, "Failed to resolve variable name in variable to variable value assignment : " + refVarName);
+                                }
+                            }
                         }
-                        else
+                        if(variableValue != null)
                         {
                             var variableAssignment = new DialogVariableAssignment(variableName, @operator, variableValue);
                             dialog.LinkVariableAssignmentToVariable(dialogNode, variableAssignment);
-                            if (dialogVariables.AddDialogVariableAssignment(variableAssignment))
+                            if (dialogVariables.AddDialogVariableAssignment(variableAssignment, dialogNode.Type))
                             {
                                 dialogNode.AddVariableAssignment(variableAssignment);
                             }
@@ -512,7 +530,6 @@ namespace dialogtool
             // Analyze question text and options
             var promptElement = outputElement.Element("prompt");
             var getUserInput = outputElement.Element("getUserInput");
-            var inputElement = getUserInput.Element("input");
             string questionExpression;
             Constant constant;
             string questionText;
@@ -526,7 +543,7 @@ namespace dialogtool
                 for (int i = 0; i < optionCount; i++)
                 {
                     options[i] = match.Groups["option"].Captures[i].Value;
-                } 
+                }
                 questionText = HTML_DIALOG_OPTIONS_REGEX.Replace(questionText, "");
             }
 
@@ -540,18 +557,43 @@ namespace dialogtool
 
             // Analyze entity match and disambiguation options
             EntityMatch entityMatch = null;
+            var inputElement = getUserInput.Element("input");
             if (inputElement != null)
             {
                 entityMatch = AnalyzeEntityMatch(disambiguationQuestion, inputElement);
                 disambiguationQuestion.SetEntityMatchAndDisambiguationOptions(entityMatch, options, dialog);
+
+                // Sometimes : nested conditions directly inside the entity match input
+                var nestedElements = inputElement.Elements();
+                AnalyzeDisambiguationQuestionChildren(dialogVariables, disambiguationQuestion, nestedElements);
             }
             dialogVariables.AddDisambiguationQuestion(disambiguationQuestion);
 
             // Children nodes of disambiguation question
+            var childrenNodes = getUserInput.Elements();
+            AnalyzeDisambiguationQuestionChildren(dialogVariables, disambiguationQuestion, childrenNodes);
+
+            // Optional last output node after getUserInput
+            var lastOutputElement = outputElement.Element("output");
+            if (lastOutputElement != null)
+            {
+                if (DetectDisambiguationQuestion(lastOutputElement))
+                {
+                    AnalyzeDisambiguationQuestion(disambiguationQuestion, lastOutputElement, dialogVariables);
+                }
+                else
+                {
+                    AnalyzeGotoOrAnswerNode(disambiguationQuestion, lastOutputElement, dialogVariables);
+                }
+            }
+        }
+
+        private void AnalyzeDisambiguationQuestionChildren(DialogVariablesSimulator dialogVariables, DisambiguationQuestion disambiguationQuestion, IEnumerable<XElement> childrenNodes)
+        {
             bool isFirstChild = true;
             XElement switchSecondIfElement = null;
             DialogNode inlineSwitchDialogNode = null;
-            foreach (var getUserInputChildElement in getUserInput.Elements().Where(elt => elt.Attribute("isOffline") == null))
+            foreach (var getUserInputChildElement in childrenNodes.Where(elt => elt.Attribute("isOffline") == null))
             {
                 if (getUserInputChildElement == switchSecondIfElement)
                 {
@@ -562,6 +604,7 @@ namespace dialogtool
                 {
                     case "input":
                     case "action":
+                    case "grammar":
                         continue;
                     case "if":
                         AnalyzeDialogVariableConditions(inlineSwitchDialogNode == null ? disambiguationQuestion : inlineSwitchDialogNode, getUserInputChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode, ref switchSecondIfElement);
@@ -575,22 +618,8 @@ namespace dialogtool
                 }
                 isFirstChild = false;
             }
-
-            // Optional last output node after getUserInput
-            var lastOutputElement = outputElement.Element("output");
-            if(lastOutputElement != null)
-            {
-                if (DetectDisambiguationQuestion(lastOutputElement))
-                {
-                    AnalyzeDisambiguationQuestion(disambiguationQuestion, lastOutputElement, dialogVariables);
-                }
-                else
-                {
-                    AnalyzeGotoOrAnswerNode(disambiguationQuestion, lastOutputElement, dialogVariables);
-                }
-            }
         }
-        
+
         private static Regex HTML_DIALOG_OPTIONS_REGEX = new Regex(@"\s*<ul>\s*(<li\s*(data-auto-question=""true"")?\s*>(?<option>.+)</li>\s*)+</ul>\s*", RegexOptions.Compiled);
 
         private void AnalyzePromptMessage(XElement promptElement, out string messageExpression, out Constant constant, out string messageText)
@@ -665,7 +694,7 @@ namespace dialogtool
                 }
             }
             DialogNode gotoOrAnswerNode = null;
-            if (dialog.StartOfDialogNodeId.Contains(gotoRef))
+            if (dialog.StartOfDialogNodeId == gotoRef)
             {
                 gotoOrAnswerNode = new DirectAnswer(parentNode, gotoRef, messageExpression, messageText, dialog);
             }

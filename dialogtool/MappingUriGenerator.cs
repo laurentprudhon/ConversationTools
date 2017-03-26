@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace dialogtool
@@ -46,7 +47,15 @@ namespace dialogtool
             new string[] { "person_entity", "Person_Var" },
             new string[] { "product_entity", "Product_Var" },
             new string[] { "history_entity", "History_Var" } };
-        
+
+        // Expose config
+
+        internal static IEnumerable<string> GetEntityVariables(MappingUriConfig mappingUriConfig)
+        {
+            string[][] mappingUriSegments = mappingUriConfig == MappingUriConfig.Insurance ? Insurance_MappingUriSegments : Savings_MappingUriSegments;
+            return mappingUriSegments.Where(p => p[1] != "federationGroup" && p[1] != "CLASSIFIER_CLASS_0").SelectMany(p => new string[] { p[1], p[1] + "_2" });
+        }
+
         // Mapping URIs generation
 
         public static string[] GenerateMappingURIs(DialogVariablesSimulator dialogVariablesSimulator, MappingUriConfig mappingUriConfig, out bool redirectToLongTail)
@@ -72,7 +81,7 @@ namespace dialogtool
                 var inspectedValue = dialogVariablesSimulator.TryGetVariableValue(inspectedVariable);
                 if(inspectedValue != null && inspectedValue.Contains(searchPattern))
                 {
-                    dialogVariablesSimulator.SetVariableValue(targetVariable, targetValue);
+                    dialogVariablesSimulator.SetVariableValue(targetVariable, targetValue, DialogNodeType.FatHeadAnswers);
                 }
             }
 
