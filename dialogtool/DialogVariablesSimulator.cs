@@ -134,9 +134,12 @@ namespace dialogtool
         
         public void AddDisambiguationQuestion(DisambiguationQuestion question)
         {
-            var entityMatches = new List<EntityMatch>(1);
-            entityMatches.Add(question.EntityMatch);
-            AddEntityMatches(entityMatches);
+            if (question.EntityMatch != null)
+            {
+                var entityMatches = new List<EntityMatch>(1);
+                entityMatches.Add(question.EntityMatch);
+                AddEntityMatches(entityMatches);
+            }
         }
 
         private void AddEntityMatches(IList<EntityMatch> entityMatches)

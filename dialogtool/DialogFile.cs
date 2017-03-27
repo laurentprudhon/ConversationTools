@@ -291,7 +291,16 @@ namespace dialogtool
             foreach (var inputChildElement in intentInput.Elements("input").Where(elt => elt.Attribute("isOffline") == null))
             {
                 var entityMatch = AnalyzeEntityMatch(intent, inputChildElement);
-                intent.AddEntityMatch(entityMatch);
+                if (entityMatch != null)
+                {
+                    intent.AddEntityMatch(entityMatch);
+                }
+                
+                // Check for unexpected additional output node
+                if (inputChildElement.Element("output") != null)
+                {
+                    dialog.LogMessage(((IXmlLineInfo)inputChildElement.Element("output")).LineNumber, MessageType.IncorrectPattern, "Invalid pattern detected : unexpected output node inside entity match section");
+                }
             }
             dialog.AddIntent(intent, dialogVariables);
 
@@ -371,6 +380,20 @@ namespace dialogtool
             }
             if(entityName == null)
             {
+                // Special case : direct text patterns instead of entity match => not supported yet
+                // Is it a pattern we would like to support in the future or a mistake in the dialog file ?
+                /*
+                    <input>
+                        <grammar>
+                            <item>Transfert entrant externe</item>
+                        </grammar>
+                        <output>
+                            <prompt/>
+                            <action varName="Event_Var" operator="SET_TO">transfert_entrant_externe</action>
+                            <goto ref="profileCheck_205586"/>
+                        </output>
+                    </input>
+                 */
                 dialog.LogMessage(((IXmlLineInfo)inputElement.Element("grammar")).LineNumber, MessageType.IncorrectPattern, "Invalid pattern detected : expected entity match, found direct text pattern");
                 return null;
             }
@@ -571,7 +594,10 @@ namespace dialogtool
             if (inputElement != null)
             {
                 entityMatch = AnalyzeEntityMatch(disambiguationQuestion, inputElement);
-                disambiguationQuestion.SetEntityMatchAndDisambiguationOptions(entityMatch, options, dialog);
+                if (entityMatch != null)
+                {
+                    disambiguationQuestion.SetEntityMatchAndDisambiguationOptions(entityMatch, options, dialog);
+                }
 
                 // Sometimes : nested conditions directly inside the entity match input
                 var nestedElements = inputElement.Elements();
@@ -622,6 +648,9 @@ namespace dialogtool
                     case "output":
                     case "goto":
                         AnalyzeGotoOrAnswerNode(disambiguationQuestion, getUserInputChildElement, dialogVariables);
+                        break;
+                    case "folder":
+                        AnalyzeDisambiguationQuestionChildren(dialogVariables, disambiguationQuestion, getUserInputChildElement.Elements());
                         break;
                     default:
                         throw new Exception("Line " + ((IXmlLineInfo)getUserInputChildElement).LineNumber + " : Unexpected child element " + getUserInputChildElement.Name + " below <getUserInput>");

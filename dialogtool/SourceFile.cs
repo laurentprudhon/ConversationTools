@@ -243,7 +243,10 @@ namespace dialogtool
                 }
                 xw.WriteEndElement();
             }
-            WriteEntityMatch(xw, childNode.EntityMatch);                    
+            if (childNode.EntityMatch != null)
+            {
+                WriteEntityMatch(xw, childNode.EntityMatch);
+            }
             WriteChildrenNodes(xw, childNode);
             xw.WriteEndElement();
         }
