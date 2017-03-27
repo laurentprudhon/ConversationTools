@@ -82,7 +82,21 @@ namespace dialogtool
             {
                 foreach (var assignment in dialogNode.VariableAssignments)
                 {
-                    variablesValues[assignment.VariableName] = assignment.Value;
+                    if (assignment.Operator == DialogVariableOperator.CopyValueFromVariable)
+                    {
+                        if(variablesValues.ContainsKey(assignment.Value))
+                        {
+                            variablesValues[assignment.VariableName] = variablesValues[assignment.Value];
+                        }
+                        else
+                        {
+                            variablesValues.Remove(assignment.VariableName);
+                        }
+                    }
+                    else
+                    {
+                        variablesValues[assignment.VariableName] = assignment.Value;
+                    }
                 }
             }
         }

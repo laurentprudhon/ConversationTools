@@ -50,7 +50,8 @@ namespace dialogtool
         SetTo,
         SetToBlank,
         SetToYes,
-        SetToNo
+        SetToNo,
+        CopyValueFromVariable
     }
 
     public class DialogVariableAssignment
@@ -59,7 +60,7 @@ namespace dialogtool
         {
             VariableName = variableName;
             Operator = @operator;
-            if (Operator == DialogVariableOperator.SetTo)
+            if (Operator == DialogVariableOperator.SetTo || Operator == DialogVariableOperator.CopyValueFromVariable)
             {
                 if (!String.IsNullOrEmpty(value))
                 {

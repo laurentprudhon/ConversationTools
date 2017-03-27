@@ -329,6 +329,11 @@ namespace dialogtool
         {
             variableAssignment.Variable = Variables[variableAssignment.VariableName];
             variableAssignment.Variable.AddDialogNodeReference(dialogNode, VariableReferenceType.Write);
+            if(variableAssignment.Operator == DialogVariableOperator.CopyValueFromVariable)
+            {
+                var refVariable = Variables[variableAssignment.Value];
+                refVariable.AddDialogNodeReference(dialogNode, VariableReferenceType.Read);
+            }
         }
 
         internal void LinkEntityMatchToEntityAndDialogVariables(DialogNode dialogNode, EntityMatch entityMatch)

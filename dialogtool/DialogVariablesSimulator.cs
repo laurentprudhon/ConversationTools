@@ -104,6 +104,21 @@ namespace dialogtool
                     {
                         return false;
                     }
+                case DialogVariableOperator.CopyValueFromVariable:
+                    var fromVariable = Variables[variableAssignment.Value];
+                    IList<string> fromValues = null;
+                    VariablesValues.TryGetValue(fromVariable, out fromValues);
+                    IList<string> toValues = null;
+                    VariablesValues.TryGetValue(variableAssignment.Variable, out toValues);
+                    if(fromValues == null)
+                    {
+                        if (toValues != null) VariablesValues.Remove(variableAssignment.Variable);
+                    }
+                    else
+                    {
+                        VariablesValues[variableAssignment.Variable] = fromValues;
+                    }
+                    return true;
                 default:
                     throw new Exception("Unexpected variable assignment operator " + variableAssignment.Operator);
             }

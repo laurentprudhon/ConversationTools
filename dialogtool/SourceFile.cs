@@ -170,9 +170,17 @@ namespace dialogtool
             {
                 foreach(var variableAssignment in dialogNode.VariableAssignments)
                 {
+
                     xw.WriteStartElement("Set");
                     xw.WriteAttributeString("Variable", variableAssignment.VariableName);
-                    xw.WriteAttributeString("ToValue", variableAssignment.Value);
+                    if (variableAssignment.Operator == DialogVariableOperator.CopyValueFromVariable)
+                    {
+                        xw.WriteAttributeString("FromVariable", variableAssignment.Value);
+                    }
+                    else
+                    {
+                        xw.WriteAttributeString("ToValue", variableAssignment.Value);
+                    }
                     xw.WriteEndElement();
                 }
             }

@@ -475,14 +475,24 @@ namespace dialogtool
                             else
                             {
                                 var refVarName = variableValue.Substring(1, variableValue.Length - 2);
-                                variableValue = dialogVariables.TryGetVariableValue(refVarName);
-                                if(variableValue == null)
+                                DialogVariable refVariable = null;
+                                dialog.Variables.TryGetValue(refVarName, out refVariable);
+                                if(refVariable == null)
                                 {
                                     dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.InvalidReference, "Failed to resolve variable name in variable to variable value assignment : " + refVarName);
                                 }
+                                else
+                                {
+                                    var copyFromVariable = new DialogVariableAssignment(variableName, DialogVariableOperator.CopyValueFromVariable, refVarName);
+                                    dialog.LinkVariableAssignmentToVariable(dialogNode, copyFromVariable);
+                                    if (dialogVariables.AddDialogVariableAssignment(copyFromVariable, dialogNode.Type))
+                                    {
+                                        dialogNode.AddVariableAssignment(copyFromVariable);
+                                    }
+                                }
                             }
                         }
-                        if(variableValue != null)
+                        else
                         {
                             var variableAssignment = new DialogVariableAssignment(variableName, @operator, variableValue);
                             dialog.LinkVariableAssignmentToVariable(dialogNode, variableAssignment);
