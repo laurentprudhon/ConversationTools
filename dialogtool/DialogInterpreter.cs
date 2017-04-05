@@ -20,8 +20,7 @@ namespace dialogtool
 
             if(intent != null)
             { 
-                IDictionary<string, string> variablesValues = new Dictionary<string, string>();
-                ExecuteUserInputNode(dialog, variablesValues, intent, questionText, intent.EntityMatches, result);
+                ExecuteUserInputNode(dialog, intent, questionText, intent.EntityMatches, result);
             }
             else
             {
@@ -35,14 +34,13 @@ namespace dialogtool
         {
             var result = new DialogExecutionResult(question.LineNumber.ToString(), question.QuestionText, intentName);
             result.SetDisambiguationOption(option);
-
-            IDictionary<string, string> variablesValues = new Dictionary<string, string>();
-            ExecuteUserInputNode(dialog, variablesValues, question, option.Text, new EntityMatch[] { question.EntityMatch }, result);
+            
+            ExecuteUserInputNode(dialog, question, option.Text, new EntityMatch[] { question.EntityMatch }, result);
 
             return result;
         }
 
-        private static void ExecuteUserInputNode(Dialog dialog, IDictionary<string, string> variablesValues, DialogNode dialogNode, string userInputText, IList<EntityMatch> entityMatches, DialogExecutionResult result)
+        private static void ExecuteUserInputNode(Dialog dialog, DialogNode dialogNode, string userInputText, IList<EntityMatch> entityMatches, DialogExecutionResult result)
         {
             // Try to match entity values in the questions
             var entities = entityMatches.Select(entityMatch => entityMatch.Entity);
@@ -61,19 +59,19 @@ namespace dialogtool
                 {
                     if (matchIndex == 0 && entityMatch.EntityVariableName1 != null)
                     {
-                        variablesValues[entityMatch.EntityVariableName1] = entityValue.Name;
+                        result.VariablesValues[entityMatch.EntityVariableName1] = entityValue.Name;
                     }
                     else if (matchIndex == 1 && entityMatch.EntityVariableName2 != null)
                     {
-                        variablesValues[entityMatch.EntityVariableName2] = entityValue.Name;
+                        result.VariablesValues[entityMatch.EntityVariableName2] = entityValue.Name;
                     }
                     matchIndex++;
                 }
             }
-            ExecuteVariableAssignments(dialogNode, variablesValues);
+            ExecuteVariableAssignments(dialogNode, result.VariablesValues);
 
             // Traverse the children nodes
-            SelectChildNode(dialog, variablesValues, dialogNode, null, result);
+            SelectChildNode(dialog, result.VariablesValues, dialogNode, null, result);
         }
 
         private static void ExecuteVariableAssignments(DialogNode dialogNode, IDictionary<string, string> variablesValues)
@@ -266,6 +264,7 @@ namespace dialogtool
             IntentName = intentName;
 
             DialogNodesExecutionPath = new List<DialogNodeExecution>();
+            VariablesValues = new Dictionary<string, string>();
         }
 
         public string QuestionId { get; private set; }
@@ -283,6 +282,8 @@ namespace dialogtool
         {
             DialogNodesExecutionPath.Add(dialogNodeExecution);
         }
+
+        public IDictionary<string, string> VariablesValues { get; private set; }
 
         public IList<string> Messages { get; private set; }
         public void LogMessage(string message)

@@ -26,14 +26,21 @@ namespace dialogtool
             XmlDocument = XDocument.Load("file://" + filePath, LoadOptions.SetLineInfo);
         }
 
-        public Dialog Read()
+        public Dialog Read(bool isInternalTest = false)
         {
             dialog = new Dialog(filePath);
-            
-            var mainFolder = XmlDocument.Descendants("folder").Where(node => node.Attribute("label") != null && node.Attribute("label").Value == startFolderLabel).First();
-            AnalyzeMainFolder(mainFolder);
-            var answerFolder = XmlDocument.Descendants("folder").Where(node => node.Attribute("label") != null && node.Attribute("label").Value == answerFolderLabel).First();
-            AnalyzeAnswerFolder(answerFolder);
+
+            if (isInternalTest)
+            {
+                intentsFolderLabel = "CMCIC_TEST";
+            }
+            else
+            {
+                var mainFolder = XmlDocument.Descendants("folder").Where(node => node.Attribute("label") != null && node.Attribute("label").Value == startFolderLabel).First();
+                AnalyzeMainFolder(mainFolder);
+                var answerFolder = XmlDocument.Descendants("folder").Where(node => node.Attribute("label") != null && node.Attribute("label").Value == answerFolderLabel).First();
+                AnalyzeAnswerFolder(answerFolder);
+            }
             
             AnalyzeVariablesFolders();
             AnalyzeConstantsFolders();
@@ -43,7 +50,7 @@ namespace dialogtool
             var rootIntentFolder = XmlDocument.Descendants("folder").Where(elt => elt.Attribute("label").Value == intentsFolderLabel).First();
             AnalyzeIntentsFolder(intentsFolderLabel, rootIntentFolder);
             dialog.ResolveAndCheckReferences();
-
+            
             LogOfflineElements();
 
             return dialog;

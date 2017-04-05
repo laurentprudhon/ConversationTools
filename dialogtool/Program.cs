@@ -16,7 +16,8 @@ namespace dialogtool
             view,
             answers,
             debug,
-            compare
+            compare,
+            internaltest
         }
 
         private static void DisplayDialogToolSyntax()
@@ -89,6 +90,9 @@ namespace dialogtool
                     case "compare":
                         dialogCommand = DialogToolCommands.compare;
                         break;
+                    case "internaltest":
+                        dialogCommand = DialogToolCommands.internaltest;
+                        break;
                     default:
                         Console.WriteLine("ERROR : unknown dialogtool command \"" + command + "\"");
                         Console.WriteLine();
@@ -103,6 +107,7 @@ namespace dialogtool
                     case DialogToolCommands.check:
                     case DialogToolCommands.view:
                     case DialogToolCommands.answers:
+                    case DialogToolCommands.internaltest:
                         if (args.Length != 2)
                         {
                             Console.WriteLine("ERROR : one parameter expected for dialogtool command \"" + command + "\"");
@@ -203,6 +208,9 @@ namespace dialogtool
                     case DialogToolCommands.compare:
                         CompareResultsAcrossDialogVersions(fileInfo1, fileInfo2, fileInfo3);
                         break;
+                    case DialogToolCommands.internaltest:
+                        InternalTest_DisplayMatchResults(fileInfo1);
+                        break;
                 }
             }
             catch(Exception e)
@@ -214,7 +222,7 @@ namespace dialogtool
                 Console.WriteLine("----------");
             }
         }
-
+               
         private static void ReportException(Exception e)
         {
             if(e.InnerException != null)
@@ -290,12 +298,12 @@ namespace dialogtool
             Console.WriteLine("");
         }
 
-        private static Dialog LoadDialogFile(FileInfo sourceOrDialogFileInfo, out string sourceOrDialogFileName)
+        private static Dialog LoadDialogFile(FileInfo sourceOrDialogFileInfo, out string sourceOrDialogFileName, bool isInternalTest = false)
         {
             sourceOrDialogFileName = sourceOrDialogFileInfo.Name;
             Console.Write("Reading " + sourceOrDialogFileName + " ... ");
             var dialogFile = new DialogFile(sourceOrDialogFileInfo);
-            Dialog dialog = dialogFile.Read();
+            Dialog dialog = dialogFile.Read(isInternalTest);
             Console.WriteLine("OK");
             Console.WriteLine();
             return dialog;
@@ -427,6 +435,53 @@ namespace dialogtool
                 foreach(var impact in impacts)
                 {
                     sw.WriteLine(impact);
+                }
+            }
+            Console.WriteLine("OK");
+            Console.WriteLine("");
+        }
+
+        private static void InternalTest_DisplayMatchResults(FileInfo sourceOrDialogFileInfo)
+        {           
+            Console.WriteLine("Internal test - Check entity values matches :");
+            Console.WriteLine();
+
+            // Load dialog file
+            string sourceOrDialogFileName;
+            Dialog dialog = LoadDialogFile(sourceOrDialogFileInfo, out sourceOrDialogFileName, true);
+
+            Console.WriteLine(dialog.Errors.Count + " inconsistencies found :");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.DuplicateKey.ToString())).Count() + " duplicate keys");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.IncorrectPattern.ToString())).Count() + " incorrect patterns");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.InvalidReference.ToString())).Count() + " invalid references");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.NeverUsed.ToString())).Count() + " elements never used");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.Info.ToString())).Count() + " infos");
+            Console.WriteLine("");
+
+            // Write list of entity values matches
+            var errorsFilePath = @"result\" + sourceOrDialogFileName + ".internaltest.csv";
+            Console.Write("Writing " + errorsFilePath + " ... ");
+            using (StreamWriter sw = new StreamWriter(errorsFilePath, false, Encoding.GetEncoding("iso8859-1")))
+            {
+                sw.WriteLine("#num;question;Test_Var;Test_Var_2;Test2_Var;Test2_Var_2");
+
+                var testIntent = dialog.Intents["TESTS"];
+                int i = 0;
+                foreach (var question in testIntent.Questions)
+                {
+                    i++;
+                    var result = DialogInterpreter.AnalyzeInitialQuestion(dialog, i.ToString(), question, "TESTS");
+                    string var11 = null;
+                    result.VariablesValues.TryGetValue("Test_Var", out var11);
+                    string var12 = null;
+                    result.VariablesValues.TryGetValue("Test_Var_2", out var12);
+                    string var21 = null;
+                    result.VariablesValues.TryGetValue("Test2_Var", out var21);
+                    string var22 = null;
+                    result.VariablesValues.TryGetValue("Test2_Var_2", out var22);
+
+                    sw.WriteLine(i.ToString() + ";" + question + ";" + var11 + ";" + var12 + ";" + var21 + ";" + var22);
+                    //sw.WriteLine(i.ToString() + ";" + question + ";" + "{{\"TestMatch1\": \"{0}\", \"TestMatch2\": \"{1}\", \"Test2Match1\": \"{2}\", \"Test2Match2\": \"{3}\"}}", var11, var12, var21, var22);
                 }
             }
             Console.WriteLine("OK");
