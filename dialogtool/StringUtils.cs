@@ -6,7 +6,7 @@ namespace dialogtool
 {
     public class StringUtils
     {
-        public static string RemoveDiacritics(string input)
+        public static string RemoveDiacriticsAndDashesUnderscores(string input)
         {
             string normalized = input.Normalize(NormalizationForm.FormD);
             var builder = new StringBuilder();
@@ -15,7 +15,14 @@ namespace dialogtool
             {
                 if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
                 {
-                    builder.Append(ch);
+                    if (ch == '-' || ch == '_')
+                    {
+                        builder.Append(' ');
+                    }
+                    else
+                    {
+                        builder.Append(ch);
+                    }
                 }
             }
 

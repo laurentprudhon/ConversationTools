@@ -372,6 +372,11 @@ namespace dialogtool
 
         internal void LinkDialogVariableConditionToDialogVariableAndEntityValue(DialogNode dialogNode, DialogVariableCondition variableCondition, DialogVariablesSimulator dialogVariables)
         {
+            if (String.IsNullOrEmpty(variableCondition.VariableName))
+            {
+                return;
+            }
+
             DialogVariable variable = null;
             EntityValue entityValue = null;
             if (!Variables.ContainsKey(variableCondition.VariableName))
@@ -383,7 +388,7 @@ namespace dialogtool
                 variable = Variables[variableCondition.VariableName];
                 variable.AddDialogNodeReference(dialogNode, VariableReferenceType.Read);
 
-                if (variableCondition.Comparison != ConditionComparison.HasValue)
+                if (variableCondition.Comparison != ConditionComparison.HasValue && !String.IsNullOrEmpty(variableCondition.Value))
                 {
                     var entity = dialogVariables.TryGetEntityFromVariable(variable);
                     if (entity != null)

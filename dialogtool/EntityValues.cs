@@ -65,19 +65,19 @@ namespace dialogtool
                     {
                         EntityValueFromConceptDictionary.Add(conceptCanonicalValue, entityValue);
                     }
-                    else
-                    {
-                        var conflictingEntityValue = EntityValueFromConceptDictionary[conceptCanonicalValue];
-                        if (entityValue.Name != conflictingEntityValue.Name)
-                        {
-                            errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Concept canonical value \"" + conceptCanonicalValue + "\" defined for entity value " + Name + " > \"" + entityValue.Name + "\" is conflicting with concept canonical value previoulsy defined for entity value \"" + conflictingEntityValue.Name + "\" on line " + conflictingEntityValue.LineNumber);
-                        }
-                    }
                     foreach (var synonym in entityValue.Concept.Synonyms)
                     {
                         if (!EntityValueSynonymsDictionary.ContainsKey(synonym))
                         {
                             EntityValueSynonymsDictionary.Add(synonym, entityValue);
+                        }
+                        else
+                        {
+                            var conflictingEntityValue = EntityValueSynonymsDictionary[synonym];
+                            if (entityValue.Name != conflictingEntityValue.Name)
+                            {
+                                errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Entity " + Name + " : concept synonym \"" + synonym + "\" defined for entity value \"" + entityValue.Name + "\" is conflicting with an identical concept synonym previoulsy defined for entity value \"" + conflictingEntityValue.Name + "\" on line " + conflictingEntityValue.LineNumber);
+                            }
                         }
                     }
                 }
@@ -296,7 +296,7 @@ namespace dialogtool
         {
             Entity = entity;
             Name = name;
-            CanonicalValue = StringUtils.RemoveDiacritics(canonicalValue);
+            CanonicalValue = StringUtils.RemoveDiacriticsAndDashesUnderscores(canonicalValue);
         }
 
         public Entity Entity { get; private set; }
@@ -322,7 +322,7 @@ namespace dialogtool
             // Ignore accented chars in synonyms
             for(int i = 0; i < synonyms.Count; i++)
             {
-                synonyms[i] = StringUtils.RemoveDiacritics(synonyms[i]);
+                synonyms[i] = StringUtils.RemoveDiacriticsAndDashesUnderscores(synonyms[i]);
             }
 
             Id = id;

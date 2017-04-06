@@ -188,7 +188,7 @@ namespace dialogtool
             var conceptNodes = XmlDocument.Descendants("folder").Where(node => node.Attribute("label") != null && node.Attribute("label").Value == "Concepts").Descendants("concept").Where(node => node.Attribute("isOffline") == null);
             foreach (var conceptNode in conceptNodes)
             {
-                var synonyms = conceptNode.Descendants("item").Select(item => item.Value).ToList();
+                var synonyms = conceptNode.Descendants("item").Select(item => item.Value.Trim()).ToList();
                 string conceptId = null;
                 if (conceptNode.Attribute("id") != null)
                 {
@@ -217,7 +217,7 @@ namespace dialogtool
                 entity.LineNumber = ((IXmlLineInfo)entityNode).LineNumber;
                 foreach (var valueNode in entityNode.Descendants("value").Where(node => node.Attribute("isOffline") == null))
                 {
-                    var canonicalValue = valueNode.Attribute("value").Value;
+                    var canonicalValue = valueNode.Attribute("value").Value.Trim();
                     var entityValueName = valueNode.Attribute("name").Value;
                     var entityValue = new EntityValue(entity, entityValueName, canonicalValue);
                     entityValue.LineNumber = ((IXmlLineInfo)valueNode).LineNumber;
@@ -231,7 +231,6 @@ namespace dialogtool
                     }
                     dialog.LinkEntityValueToConcept(entityValue, conceptId);                    
                 }
-                entity.OnAllEntityValuesAdded(dialog);
                 dialog.AddEntity(entity);
             }
             dialog.OnAllEntitiesAdded();            
@@ -453,13 +452,13 @@ namespace dialogtool
 
         private void SetDialogNodeIdAndLineNumberAndVariableAssignments(DialogNode dialogNode, XElement idElement, XElement[] variablesElements, DialogVariablesSimulator dialogVariables, Dialog dialog)
         {
+            dialogNode.LineNumber = ((IXmlLineInfo)idElement).LineNumber;
+
             if (idElement.Attribute("id") != null)
             {
                 dialogNode.Id = idElement.Attribute("id").Value;
                 dialog.RegisterDialogNode(dialogNode);
             }
-
-            dialogNode.LineNumber = ((IXmlLineInfo)idElement).LineNumber;
 
             XElement previousVariableElement = null;
             foreach (var variablesElement in variablesElements)
@@ -917,7 +916,7 @@ namespace dialogtool
                 
                 // Add conditions
                 foreach (var variableCondition in variableConditions)
-                {
+                {                    
                     dialog.LinkDialogVariableConditionToDialogVariableAndEntityValue(dialogVariablesConditions, variableCondition, dialogVariables);
                 }
                 dialogVariables.AddDialogVariableConditions(dialogVariablesConditions);

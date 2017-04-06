@@ -255,7 +255,7 @@ namespace dialogtool
                     var entityValuesMatchResult = dialog.MatchEntityValueInOptionText(this, entityMatch.Entity, optionText);
                     if (entityValuesMatchResult.EntityValues.Count == 0)
                     {
-                        string message = "Option \"" + optionText + "\" for question \"" + QuestionText + "\" can't be matched with any entity value for entity " + entityMatch.Entity.Name;
+                        string message = "Option \"" + optionText + "\" for question \"" + QuestionText.Trim(' ', '\r', '\n') + "\" can't be matched with any entity value for entity " + entityMatch.Entity.Name;
                         if (entityValuesMatchResult.ConceptSubstitutions != null)
                         {
                             foreach (var conceptSubstitution in entityValuesMatchResult.ConceptSubstitutions)
