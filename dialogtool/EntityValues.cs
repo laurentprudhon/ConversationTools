@@ -19,6 +19,7 @@ namespace dialogtool
 
         public IDictionary<string, EntityValue> EntityValueNamesDictionary { get; private set; }
         public IDictionary<string, EntityValue> EntityValuesDictionary { get; private set; }
+        public IDictionary<string, EntityValue> EntityValueFromConceptDictionary { get; private set; }
         public IDictionary<string, EntityValue> EntityValueSynonymsDictionary { get; private set; }
         internal Regex EntityValuesRegex { get; private set; }
 
@@ -29,11 +30,12 @@ namespace dialogtool
 
         public void OnAllEntityValuesAdded(IMessageCollector errors)
         {
-            // Entity value names comparison isn't  case insensitive
+            // Entity value names comparison isn't case sensitive
             EntityValueNamesDictionary = new Dictionary<string, EntityValue>(StringComparer.InvariantCultureIgnoreCase);
-            // Canonical values comparison is case sensitive ?? => can't be, if not there would be too many invalid references
+            // Canonical values comparison isn't case sensitive
             EntityValuesDictionary = new Dictionary<string, EntityValue>(StringComparer.InvariantCultureIgnoreCase);
             // Synonyms from concepts comparison isn't case sensitive
+            EntityValueFromConceptDictionary = new Dictionary<string, EntityValue>(StringComparer.InvariantCultureIgnoreCase);
             EntityValueSynonymsDictionary = new Dictionary<string, EntityValue>(StringComparer.InvariantCultureIgnoreCase);
             
             foreach (var entityValue in Values)
@@ -58,19 +60,24 @@ namespace dialogtool
                 }
                 if(entityValue.Concept != null)
                 {
+                    var conceptCanonicalValue = entityValue.Concept.CanonicalValue;                    
+                    if (!EntityValueFromConceptDictionary.ContainsKey(conceptCanonicalValue))
+                    {
+                        EntityValueFromConceptDictionary.Add(conceptCanonicalValue, entityValue);
+                    }
+                    else
+                    {
+                        var conflictingEntityValue = EntityValueFromConceptDictionary[conceptCanonicalValue];
+                        if (entityValue.Name != conflictingEntityValue.Name)
+                        {
+                            errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Concept canonical value \"" + conceptCanonicalValue + "\" defined for entity value " + Name + " > \"" + entityValue.Name + "\" is conflicting with concept canonical value previoulsy defined for entity value \"" + conflictingEntityValue.Name + "\" on line " + conflictingEntityValue.LineNumber);
+                        }
+                    }
                     foreach (var synonym in entityValue.Concept.Synonyms)
                     {
                         if (!EntityValueSynonymsDictionary.ContainsKey(synonym))
                         {
                             EntityValueSynonymsDictionary.Add(synonym, entityValue);
-                        }
-                        else
-                        {
-                            var conflictingEntityValue = EntityValueSynonymsDictionary[synonym];
-                            if (entityValue.Name != conflictingEntityValue.Name)
-                            {
-                                errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Synonym \"" + synonym + "\" for entity value " + Name + " > \"" + entityValue.Name + "\" is conflicting with a synonym for value \"" + conflictingEntityValue.Name + "\" already defined line " + conflictingEntityValue.LineNumber);
-                            }
                         }
                     }
                 }
@@ -168,7 +175,7 @@ namespace dialogtool
             IList<EntityValueProbability> entityValuesProbability = new List<EntityValueProbability>();
             foreach (var entityValue in entity.EntityValuesDictionary.Values)
             {
-                var distance = CalcLevenshteinDistance(approximateName.ToLower(), entityValue.Name.ToLower());
+                var distance = StringUtils.CalcLevenshteinDistance(approximateName.ToLower(), entityValue.Name.ToLower());
                 if (distance <= 2)
                 {
                     entityValuesProbability.Add(new EntityValueProbability(distance, entityValue));
@@ -188,17 +195,17 @@ namespace dialogtool
         {
             // Try with synonyms and canonical values
             IList<TextValueProbability> entityValuesProbability = new List<TextValueProbability>();
-            foreach (var canonicalValue in EntityValuesDictionary.Keys)
+            foreach (var canonicalValue in EntityValueSynonymsDictionary.Keys)
             {
-                var distance = CalcLevenshteinDistance(approximateText.ToLower(), canonicalValue.ToLower());
+                var distance = StringUtils.CalcLevenshteinDistance(approximateText.ToLower(), canonicalValue.ToLower());
                 if (distance <= 3)
                 {
                     entityValuesProbability.Add(new TextValueProbability(distance, canonicalValue));
                 }
             }
-            foreach (var synonym in EntityValueSynonymsDictionary.Keys)
+            foreach (var synonym in EntityValueFromConceptDictionary.Keys)
             {
-                var distance = CalcLevenshteinDistance(approximateText.ToLower(), synonym.ToLower());
+                var distance = StringUtils.CalcLevenshteinDistance(approximateText.ToLower(), synonym.ToLower());
                 if (distance <= 3)
                 {
                     entityValuesProbability.Add(new TextValueProbability(distance, synonym));
@@ -236,30 +243,7 @@ namespace dialogtool
 
             public int distance;
             public string valueOrSynonym;
-        }
-
-        private static int CalcLevenshteinDistance(string a, string b)
-        {
-            if (String.IsNullOrEmpty(a) || String.IsNullOrEmpty(b)) return 0;
-
-            int lengthA = a.Length;
-            int lengthB = b.Length;
-            var distances = new int[lengthA + 1, lengthB + 1];
-            for (int i = 0; i <= lengthA; distances[i, 0] = i++) ;
-            for (int j = 0; j <= lengthB; distances[0, j] = j++) ;
-
-            for (int i = 1; i <= lengthA; i++)
-                for (int j = 1; j <= lengthB; j++)
-                {
-                    int cost = b[j - 1] == a[i - 1] ? 0 : 1;
-                    distances[i, j] = Math.Min
-                        (
-                        Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
-                        distances[i - 1, j - 1] + cost
-                        );
-                }
-            return distances[lengthA, lengthB];
-        }
+        }       
 
         public EntityValue TryGetEntityValue(string canonicalValue)
         {
@@ -278,13 +262,13 @@ namespace dialogtool
             }
         }
 
-        public EntityValue TryGetEntityValueFromSynonym(string synonym)
+        public EntityValue TryGetEntityValueFromConcept(string conceptCanonicalValue)
         {
-            if (EntityValueSynonymsDictionary == null) return null;
+            if (EntityValueFromConceptDictionary == null) return null;
             else
             {
                 EntityValue entityValue = null;
-                if (EntityValueSynonymsDictionary.TryGetValue(synonym, out entityValue))
+                if (EntityValueFromConceptDictionary.TryGetValue(conceptCanonicalValue, out entityValue))
                 {
                     return entityValue;
                 }
@@ -312,7 +296,7 @@ namespace dialogtool
         {
             Entity = entity;
             Name = name;
-            CanonicalValue = canonicalValue;
+            CanonicalValue = StringUtils.RemoveDiacritics(canonicalValue);
         }
 
         public Entity Entity { get; private set; }
@@ -335,6 +319,12 @@ namespace dialogtool
     {
         public Concept(string id, IList<string> synonyms)
         {
+            // Ignore accented chars in synonyms
+            for(int i = 0; i < synonyms.Count; i++)
+            {
+                synonyms[i] = StringUtils.RemoveDiacritics(synonyms[i]);
+            }
+
             Id = id;
             Key = !String.IsNullOrEmpty(id) ? id : synonyms[0];
             Synonyms = synonyms;
@@ -380,7 +370,7 @@ namespace dialogtool
         public IEnumerable<Concept> Concepts
         {
             get
-            {                
+            {
                 yield return uniqueConcept;
                 if (listOfConcepts != null)
                 {

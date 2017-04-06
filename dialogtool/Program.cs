@@ -457,20 +457,34 @@ namespace dialogtool
             Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.NeverUsed.ToString())).Count() + " elements never used");
             Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.Info.ToString())).Count() + " infos");
             Console.WriteLine("");
-
-            // Write list of entity values matches
-            var errorsFilePath = @"result\" + sourceOrDialogFileName + ".internaltest.csv";
+            
+            // Write list of inconsistencies
+            var errorsFilePath = @"result\" + sourceOrDialogFileName + ".errors.csv";
             Console.Write("Writing " + errorsFilePath + " ... ");
             using (StreamWriter sw = new StreamWriter(errorsFilePath, false, Encoding.GetEncoding("iso8859-1")))
             {
+                foreach (var error in dialog.Errors.OrderBy(error => error))
+                {
+                    sw.WriteLine(error);
+                }
+            }
+            Console.WriteLine("OK");
+            Console.WriteLine("");
+
+            // Write list of entity values matches
+            var testsIntentName = "TESTS";
+            var simulationFilePath = @"result\" + sourceOrDialogFileName + ".internaltest.csv";
+            Console.Write("Writing " + simulationFilePath + " ... ");
+            using (StreamWriter sw = new StreamWriter(simulationFilePath, false, Encoding.GetEncoding("iso8859-1")))
+            {
                 sw.WriteLine("#num;question;Test_Var;Test_Var_2;Test2_Var;Test2_Var_2");
 
-                var testIntent = dialog.Intents["TESTS"];
+                var testIntent = dialog.Intents[testsIntentName];
                 int i = 0;
                 foreach (var question in testIntent.Questions)
                 {
                     i++;
-                    var result = DialogInterpreter.AnalyzeInitialQuestion(dialog, i.ToString(), question, "TESTS");
+                    var result = DialogInterpreter.AnalyzeInitialQuestion(dialog, i.ToString(), question, testsIntentName);
                     string var11 = null;
                     result.VariablesValues.TryGetValue("Test_Var", out var11);
                     string var12 = null;

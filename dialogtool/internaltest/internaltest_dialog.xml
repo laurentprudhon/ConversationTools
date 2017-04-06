@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dialog xsi:noNamespaceSchemaLocation="WatsonDialogDocument_1.1.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <flow>
+        <folder label="Main"/>
+        <folder label="TestLibrary">
+            <input id="input_67">
+                <grammar>
+                    <item>TESTS</item>
+                    <item>word1</item>
+                    <item>WoRd1</item>
+                    <item>wword1</item>
+                    <item>word11w word1</item>
+                    <item>word1 1</item>
+                    <item>before word1 after word1</item>
+                    <item>before WoRd1 after wOrD1</item>
+                    <item>before word1 after word1 again word1</item>
+                    <item>foo2 </item>
+                    <item>ffoo2</item>
+                    <item>foo22                                                    </item>
+                    <item>f foo2</item>
+                    <item>foo2 2</item>
+                    <item>before foo2 after foo2</item>
+                    <item>before fOo2 after Foo2     </item>
+                    <item>before foo2 after foo2 again foo2</item>
+                    <item>word2</item>
+                    <item>WoRd2</item>
+                    <item>wword2</item>
+                    <item>word22</item>
+                    <item>w word2</item>
+                    <item>word2 2</item>
+                    <item>before word2 after word2</item>
+                    <item>before WoRd2 after wOrD2</item>
+                    <item>before word2 after word2 again word2</item>
+                    <item>synonym2</item>
+                    <item>SynoNym2</item>
+                    <item>ssynonym2</item>
+                    <item>synonym22</item>
+                    <item>s synonym2</item>
+                    <item>synonym2 2</item>
+                    <item>before synonym2 after synonym2</item>
+                    <item>before sYNonyM2 after SyNonyM2</item>
+                    <item>before synonym2 after synonym2 again synonym2</item>
+                    <item>word3</item>
+                    <item>WoRd3</item>
+                    <item>wword3</item>
+                    <item>word33</item>
+                    <item>w word3</item>
+                    <item>word3 3</item>
+                    <item>before word3 after word3</item>
+                    <item>before WoRd3 after wOrD3</item>
+                    <item>before word3 after word3 again word3</item>
+                    <item>synonym3</item>
+                    <item>SynoNym3</item>
+                    <item>ssynonym3                            </item>
+                    <item>synonym33</item>
+                    <item>s synonym3</item>
+                    <item>synonym3 3</item>
+                    <item>before synonym3 after synonym3</item>
+                    <item>before sYNonyM3 after SyNonyM3</item>
+                    <item>before synonym3 after synonym3 again synonym3</item>
+                    <item>word4</item>
+                    <item>WoRd4</item>
+                    <item>wword4</item>
+                    <item>word44</item>
+                    <item>w word4</item>
+                    <item>word4 4</item>
+                    <item>before word4 after word4</item>
+                    <item>before WoRd4 after wOrD4</item>
+                    <item>before word4 after word4 again word4</item>
+                    <item>synonym4</item>
+                    <item>SynoNym4</item>
+                    <item>ssynonym4</item>
+                    <item>synonym44</item>
+                    <item>s synonym4</item>
+                    <item>synonym4 4</item>
+                    <item>before synonym4 after synonym4</item>
+                    <item>before sYNonyM4 after SyNonyM4</item>
+                    <item>before synonym4 after synonym4 again synonym4</item>
+                    <item>word5</item>
+                    <item>WorD5</item>
+                    <item>before word5 after word5</item>
+                    <item>before woRD5 after WOrd5</item>
+                    <item>foo6</item>
+                    <item>foo63</item>
+                    <item>foo64</item>
+                    <item>word61</item>
+                    <item>synonym61</item>
+                    <item>word63</item>
+                    <item>synonym63</item>
+                    <item>word65</item>
+                    <item>synonym6</item>
+                    <item>word66</item>
+                    <item>word7</item>
+                    <item>synonym7</item>
+                    <item>word73</item>
+                    <item>synonym73</item>
+                    <item>word75</item>
+                    <item>synonym75</item>
+                    <item>word76</item>
+                    <item>aword81</item>
+                    <item>Aword81</item>
+                    <item>àword81</item>
+                    <item>Àword81</item>
+                    <item>aword82</item>
+                    <item>Aword82</item>
+                    <item>àword82</item>
+                    <item>Àword82</item>
+                    <item>aword83</item>
+                    <item>Aword83</item>
+                    <item>àword83</item>
+                    <item>Àword83</item>
+                    <item>aword84</item>
+                    <item>Aword84</item>
+                    <item>àword84</item>
+                    <item>Àword84</item>
+                    <item>eword91</item>
+                    <item>Eword91</item>
+                    <item>éword91</item>
+                    <item>Éword91</item>                  
+                    <item>myEword91</item>
+                    <item>youreword91</item>
+                    <item>eword92</item>
+                    <item>Eword92</item>
+                    <item>éword92</item>
+                    <item>Éword92</item>
+                    <item>myéword92</item>
+                    <item>yourÉword92</item>
+                    <item>eword93</item>
+                    <item>Eword93</item>
+                    <item>éword93</item>
+                    <item>Éword93</item>
+                    <item>eword94</item>
+                    <item>Eword94</item>
+                    <item>éword94</item>
+                    <item>Éword94</item>
+                    <item>synonymcommun</item>
+                    <item>word10_1 word10_2</item>
+                    <item>word10_1    word10_2</item>
+                    <item>word11_1    word11_2</item>
+                    <item>word11_1 word11_2</item>
+                    <item>p1</item>
+                    <item>p1 p2</item>
+                    <item>p1 p2 p3</item>
+                    <item>p1 p2 p1</item>
+                    <item>p1 p2 P3</item>
+                    <item>P1 p2 p3</item>
+                    <item>p4</item>
+                    <item>p4 p5</item>
+                    <item>p4 p5 p6</item>
+                    <item>p4 p5 p4</item>
+                    <item>p21</item>
+                    <item>p21 p22</item>
+                    <item>p21 p22 p23</item>
+                    <item>P21 p22 p23</item>
+                    <item>p21 p22 P23</item>
+                    <item>p21 p22 p21</item>
+                    <item>p24</item>
+                    <item>p24 p25</item>
+                    <item>p24 p25 p26</item>
+                    <item>p24 p25 p24</item>
+                </grammar>
+                <input id="input_72">
+                    <grammar>
+                        <item>SET TEST ENTITY</item>
+                        <item>$ (TEST_ENTITY)={Test_Var} (TEST_ENTITY)={Test_Var_2}</item>
+                        <item>$ (TEST_ENTITY)={Test_Var} * (TEST_ENTITY)={Test_Var_2}</item>
+                        <item>$ (TEST_ENTITY)={Test_Var}</item>
+                    </grammar>
+                    <action varName="Test_Var" operator="SET_TO">{Test_Var.value:name}</action>
+                    <action varName="Test_Var_2" operator="SET_TO">{Test_Var_2.value:name}</action>
+                    <goto ref="input_74"/>
+                </input>
+                <input id="input_74">
+                    <grammar>
+                        <item>SET TEST2 ENTITY</item>
+                        <item>$ (TEST2_ENTITY)={Test2_Var} (TEST2_ENTITY)={Test2_Var_2}</item>
+                        <item>$ (TEST2_ENTITY)={Test2_Var} * (TEST2_ENTITY)={Test2_Var_2}</item>
+                        <item>$ (TEST2_ENTITY)={Test2_Var}</item>
+                    </grammar>
+                    <action varName="Test2_Var" operator="SET_TO">{Test2_Var.value:name}</action>
+                    <action varName="Test2_Var_2" operator="SET_TO">{Test2_Var_2.value:name}</action>
+                    <goto ref="default_76"/>
+                </input>
+            </input>
+        </folder>
+        <folder label="Global"/>
+        <folder label="Concepts">
+            <folder label="Concepts_Test">
+                <concept id="concept_57">
+                    <grammar>
+                        <item>concept_word1</item>
+                        <item>word1</item>
+                        <item>synonym1</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_29">
+                    <grammar>
+                        <item>concept_word2</item>
+                        <item>word2</item>
+                        <item>synonym2</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_30">
+                    <grammar>
+                        <item>concept_word3</item>
+                        <item>word3</item>
+                        <item>synonym3</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_31">
+                    <grammar>
+                        <item>concept_word4</item>
+                        <item>word4</item>
+                        <item>synonym4</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_34">
+                    <grammar>
+                        <item>concept_word61</item>
+                        <item>word61</item>
+                        <item>synonym61</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_35">
+                    <grammar>
+                        <item>concept_word63</item>
+                        <item>word63</item>
+                        <item>synonym63</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_36">
+                    <grammar>
+                        <item>concept_word65</item>
+                        <item>word65</item>
+                        <item>synonym6</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_37">
+                    <grammar>
+                        <item>concept_word66</item>
+                        <item>word66</item>
+                        <item>synonym6</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_38">
+                    <grammar>
+                        <item>concept_word7</item>
+                        <item>word7</item>
+                        <item>synonym7</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_39">
+                    <grammar>
+                        <item>concept_word731</item>
+                        <item>word73</item>
+                        <item>synonym73</item>
+                    </grammar>
+                </concept>
+                <concept>
+                    <grammar>
+                        <item>concept_word732</item>
+                        <item>word73</item>
+                        <item>synonym73</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_41">
+                    <grammar>
+                        <item>concept_word75</item>
+                        <item>word75</item>
+                        <item>synonym75</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_42">
+                    <grammar>
+                        <item>concept_word76</item>
+                        <item>word76</item>
+                        <item>synonym75</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_43">
+                    <grammar>
+                        <item>concept_eword91</item>
+                        <item>eword91</item>
+                        <item>myéword91</item>
+                        <item>yourÉword91</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_44">
+                    <grammar>
+                        <item>concept_eword92</item>
+                        <item>Eword92</item>
+                        <item>myeword92</item>
+                        <item>yourEword92</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_45">
+                    <grammar>
+                        <item>concept_eword93</item>
+                        <item>éword93</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_46">
+                    <grammar>
+                        <item>concept_eword94</item>
+                        <item>Éword94</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_47">
+                    <grammar>
+                        <item>concept_word10</item>
+                        <item>word10</item>
+                        <item>word10_1 word10_2</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_48">
+                    <grammar>
+                        <item>concept_word11</item>
+                        <item>word11</item>
+                        <item>word11_1    word11_2</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_49">
+                    <grammar>
+                        <item>concept_wordc1</item>
+                        <item>wordc1</item>
+                        <item>synonymcommun</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_50">
+                    <grammar>
+                        <item>concept_wordc1_2</item>
+                        <item>wordc1_2</item>
+                        <item>synonymcommun</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_51">
+                    <grammar>
+                        <item>concept_pattern21</item>
+                        <item>pattern21</item>
+                        <item>p21</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_52">
+                    <grammar>
+                        <item>concept_pattern22</item>
+                        <item>pattern22</item>
+                        <item>p21 p22</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_53">
+                    <grammar>
+                        <item>concept_pattern23</item>
+                        <item>pattern23</item>
+                        <item>p21 p22 p23</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_54">
+                    <grammar>
+                        <item>concept_pattern24</item>
+                        <item>pattern24</item>
+                        <item>p24 p25 p26</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_55">
+                    <grammar>
+                        <item>concept_pattern25</item>
+                        <item>pattern25</item>
+                        <item>p24 p25</item>
+                    </grammar>
+                </concept>
+                <concept id="concept_56">
+                    <grammar>
+                        <item>concept_pattern26</item>
+                        <item>pattern26</item>
+                        <item>p24</item>
+                    </grammar>
+                </concept>
+            </folder>
+        </folder>
+    </flow>
+    <entities>
+        <entity name="TEST_ENTITY" entityType="GENERIC">
+            <value name="name1" value="word1">
+                <concept ref="concept_57"/>
+            </value>
+            <value name="name2" value="foo2">
+                <concept ref="concept_29"/>
+            </value>
+            <value name="name3" value="word3">
+                <concept ref="concept_30"/>
+            </value>
+            <value name="name4" value="word4">
+                <concept ref="concept_31"/>
+            </value>
+            <value name="name51" value="word5"/>
+            <value name="name61" value="foo6">
+                <concept ref="concept_34"/>
+            </value>
+            <value name="name63" value="foo63">
+                <concept ref="concept_35"/>
+            </value>
+            <value name="name64" value="foo64">
+                <concept ref="concept_35"/>
+            </value>
+            <value name="name65" value="word65">
+                <concept ref="concept_36"/>
+            </value>
+            <value name="name66" value="word66">
+                <concept ref="concept_37"/>
+            </value>
+            <value name="name71" value="word7">
+                <concept ref="concept_38"/>
+            </value>
+            <value name="name73" value="word73">
+                <concept ref="concept_39"/>
+            </value>
+            <value name="name75" value="word75">
+                <concept ref="concept_41"/>
+            </value>
+            <value name="name76" value="word76">
+                <concept ref="concept_42"/>
+            </value>
+            <value name="name81" value="aword81"/>
+            <value name="name82" value="Aword82"/>
+            <value name="name83" value="àword83"/>
+            <value name="name84" value="Àword84"/>
+            <value name="name91" value="eword91">
+                <concept ref="concept_43"/>
+            </value>
+            <value name="name92" value="éword92">
+                <concept ref="concept_44"/>
+            </value>
+            <value name="name93" value="eword93">
+                <concept ref="concept_45"/>
+            </value>
+            <value name="name94" value="eword94">
+                <concept ref="concept_46"/>
+            </value>
+            <value name="namec1" value="wordc1">
+                <concept ref="concept_49"/>
+            </value>
+            <value name="name10" value="word10">
+                <concept ref="concept_47"/>
+            </value>
+            <value name="name11" value="word11">
+                <concept ref="concept_48"/>
+            </value>
+            <value name="pattern11" value="p1"/>
+            <value name="pattern12" value="p1 p2"/>
+            <value name="pattern13" value="p1 p2 p3"/>
+            <value name="pattern14" value="p4 p5 p6"/>
+            <value name="pattern15" value="p4 p5"/>
+            <value name="pattern16" value="p4"/>
+            <value name="pattern21" value="pattern21">
+                <concept ref="concept_51"/>
+            </value>
+            <value name="pattern22" value="pattern22">
+                <concept ref="concept_52"/>
+            </value>
+            <value name="pattern23" value="pattern23">
+                <concept ref="concept_53"/>
+            </value>
+            <value name="pattern24" value="pattern24">
+                <concept ref="concept_54"/>
+            </value>
+            <value name="pattern25" value="pattern25">
+                <concept ref="concept_55"/>
+            </value>
+            <value name="pattern26" value="pattern26">
+                <concept ref="concept_56"/>
+            </value>
+            <entityRules></entityRules>
+        </entity>
+        <entity name="TEST2_ENTITY" entityType="GENERIC">
+            <value name="name1_2" value="word1">
+                <concept ref="concept_57"/>
+            </value>
+            <value name="name2_2" value="foo2">
+                <concept ref="concept_29"/>
+            </value>
+            <value name="name3_2" value="word3">
+                <concept ref="concept_30"/>
+            </value>
+            <value name="name4_2" value="word4">
+                <concept ref="concept_31"/>
+            </value>
+            <value name="namec1_2" value="wordc1_2">
+                <concept ref="concept_50"/>
+            </value>
+            <entityRules></entityRules>
+        </entity>
+    </entities>
+    <constants>
+        <var_folder name="Home"/>
+    </constants>
+    <variables>
+        <var_folder name="Home">
+            <var_folder name="CM_TEST" type="VAR">
+                <var name="Test_Var" type="TEXT"/>
+                <var name="Test_Var_2" type="TEXT"/>
+                <var name="Test2_Var" type="TEXT"/>
+                <var name="Test2_Var_2" type="TEXT"/>
+            </var_folder>
+        </var_folder>
+    </variables>
+    <settings>
+        <setting name="AUTOLEARN" type="USER">false</setting>
+        <setting name="LANGUAGE" type="USER">fr-FR</setting>
+        <setting name="RESPONSETIME" type="USER">-2</setting>
+        <setting name="MAXAUTOLEARNITEMS" type="USER">4</setting>
+        <setting name="NUMAUTOSETRELATED" type="USER">4</setting>
+        <setting name="TIMEZONEID" type="USER">GMT</setting>
+        <setting name="AUTOSETRELATEDNODEID" type="USER">0</setting>
+        <setting name="INPUTMASKTYPE" type="USER">0</setting>
+        <setting name="CONCEPTMATCHING" type="USER">0</setting>
+        <setting name="DNR_NODE_ID">-15</setting>
+        <setting name="MULTISENT">0</setting>
+        <setting name="USE_CONCEPTS">3</setting>
+        <setting name="ENTITIES_SCOPE">3</setting>
+        <setting name="USER_LOGGING">2</setting>
+        <setting name="USE_TRANSLATIONS">3</setting>
+        <setting name="USE_STOP_WORDS">3</setting>
+        <setting name="USE_SPELLING_CORRECTIONS">3</setting>
+        <setting name="USE_AUTOMATIC_STOPWORDS_DETECTION">0</setting>
+        <setting name="PLATFORM_VERSION">10.1</setting>
+        <setting name="UI_COLOUR"></setting>
+        <setting name="PARENT_ACCOUNT">3dd69dfc-8ce0-4506-840a-d3350b3f4757</setting>
+        <setting name="AL_NONE_LABEL">None of the above</setting>
+        <setting name="CLS_SEARCH_MODE">1</setting>
+        <setting name="CLS_MODEL">0</setting>
+        <setting name="CLS_ENDPOINT"></setting>
+        <setting name="CLS_USERNAME"></setting>
+        <setting name="CLS_PASSWORD"></setting>
+        <setting name="CLS_MODELNAME"></setting>
+        <setting name="CLS_ADVANCED_SETTINGS">false</setting>
+        <setting name="CLS_MAXNBEST">3</setting>
+        <setting name="CLS_USE_OFFTOPIC">false</setting>
+        <setting name="DEFAULT_DNR_RETURN_POINT_CANDIDATE">-1</setting>
+    </settings>
+    <specialSettings>
+        <specialSetting label="AutoLearn Statement">
+            <variations/>
+        </specialSetting>
+        <specialSetting label="DNR Join Statement">
+            <variations/>
+        </specialSetting>
+    </specialSettings>
+</dialog>

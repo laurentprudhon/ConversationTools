@@ -181,8 +181,6 @@ namespace dialogtool
                     if (ConceptsSynonyms.ContainsKey(synonym))
                     {
                         var conceptGroupWithTheSameSynonym = ConceptsSynonyms[synonym];
-                        var otherConcept = conceptGroupWithTheSameSynonym.Concepts.First();
-                        LogMessage(concept.LineNumber, MessageType.Info, "[Info - this isn't a problem] The same synonym : \"" + synonym + "\" is used by two distinct concepts : \"" + concept.Key + "\" line " + concept.LineNumber + " and \"" + otherConcept.Key + "\"  line " + otherConcept.LineNumber);
                         conceptGroupWithTheSameSynonym.AddConcept(concept);
                     }
                     else
@@ -275,24 +273,24 @@ namespace dialogtool
                     }
                 }
             }
-            // Check if all entity synonyms are mutually exclusive
-            IDictionary<string, EntityValue> crossEntityValueSynonymsDictionary = new Dictionary<string, EntityValue>(StringComparer.InvariantCultureIgnoreCase);
+            // Check if all entity concepts are mutually exclusive
+            IDictionary<string, EntityValue> crossEntityValueConceptsDictionary = new Dictionary<string, EntityValue>(StringComparer.InvariantCultureIgnoreCase);
             foreach (var entity in Entities.Values)
             {
-                foreach (var text in entity.EntityValueSynonymsDictionary.Keys)
+                foreach (var text in entity.EntityValueFromConceptDictionary.Keys)
                 {
-                    var entityValue = entity.EntityValueSynonymsDictionary[text];
-                    if (crossEntityValueSynonymsDictionary.ContainsKey(text))
+                    var entityValue = entity.EntityValueFromConceptDictionary[text];
+                    if (crossEntityValueConceptsDictionary.ContainsKey(text))
                     {
-                        var conflictingEntityValue = crossEntityValueSynonymsDictionary[text];
+                        var conflictingEntityValue = crossEntityValueConceptsDictionary[text];
                         if (entityValue.Entity != conflictingEntityValue.Entity)
                         {
-                            LogMessage(entityValue.LineNumber, MessageType.Info, "[Info - this isn't a problem] The same synonym \"" + text + "\"  is used by two distinct entities : " + conflictingEntityValue.Entity.Name + " > \"" + conflictingEntityValue.Name + "\" (line " + conflictingEntityValue.LineNumber + "), and " + entityValue.Entity.Name + " > \"" + entityValue.Name + "\" (line " + entityValue.LineNumber + ")");
+                            LogMessage(entityValue.LineNumber, MessageType.Info, "[Info - this isn't a problem] The same concept \"" + text + "\"  is used by two distinct entities : " + conflictingEntityValue.Entity.Name + " > \"" + conflictingEntityValue.Name + "\" (line " + conflictingEntityValue.LineNumber + "), and " + entityValue.Entity.Name + " > \"" + entityValue.Name + "\" (line " + entityValue.LineNumber + ")");
                         }
                     }
                     else
                     {
-                        crossEntityValueSynonymsDictionary.Add(text, entityValue);
+                        crossEntityValueConceptsDictionary.Add(text, entityValue);
                     }
                 }
             }

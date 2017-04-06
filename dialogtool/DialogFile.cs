@@ -32,7 +32,7 @@ namespace dialogtool
 
             if (isInternalTest)
             {
-                intentsFolderLabel = "CMCIC_TEST";
+                intentsFolderLabel = "TestLibrary";
             }
             else
             {

@@ -31,7 +31,7 @@ namespace dialogtool
                         replacementText = replacementConceptGroup.Concepts.First().CanonicalValue;
                     }
                     else
-                    { 
+                    {
                         replacementText = "{" + synonym;
                         foreach (var concept in replacementConceptGroup.Concepts)
                         {
@@ -59,9 +59,12 @@ namespace dialogtool
 
         public static EntityValuesMatchResult MatchEntityValues(IEnumerable<Entity> entities, string originalText, IDictionary<string,ConceptGroupWithTheSameSynonym> conceptsSynonyms, Regex conceptsRegex)
         {
-            IList<ConceptSubstitution> conceptSubstitutions;
-            var textReplacedWithConcepts = ReplaceTextWithConcepts(originalText, conceptsSynonyms, conceptsRegex, out conceptSubstitutions);
+            // Remove accented characters before the matching process
+            var textWithoutAccentedChars = StringUtils.RemoveDiacritics(originalText);
 
+            IList<ConceptSubstitution> conceptSubstitutions;
+            var textReplacedWithConcepts = ReplaceTextWithConcepts(textWithoutAccentedChars, conceptsSynonyms, conceptsRegex, out conceptSubstitutions);
+                        
             IList<EntityValueMatch> entityValueMatches = new List<EntityValueMatch>();
             IList<EntityValue> entityValues = new List<EntityValue>();
             foreach (var entity in entities)
@@ -73,7 +76,7 @@ namespace dialogtool
                     var entityValue = entity.TryGetEntityValue(entityValueText);
                     if(entityValue == null)
                     {
-                        entityValue = entity.TryGetEntityValueFromSynonym(entityValueText);
+                        entityValue = entity.TryGetEntityValueFromConcept(entityValueText);
                     }
                     entityValues.Add(entityValue);
                     var entityValueMatch = new EntityValueMatch(textReplacedWithConcepts, match.Index, match.Index + match.Length - 1, entityValue);
