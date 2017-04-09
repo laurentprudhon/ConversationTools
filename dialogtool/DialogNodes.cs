@@ -34,6 +34,7 @@ namespace dialogtool
         MatchIntentAndEntites,
         DialogVariableConditions,
         SwitchOnEntityVariables,
+        SwitchLoopOnce,
         DisambiguationQuestion,
         FatHeadAnswers,
         RedirectToLongTail,
@@ -107,6 +108,16 @@ namespace dialogtool
         public override string ToString()
         {
             return "SwitchOn:" + EntityMatch.EntityName;
+        }
+    }
+
+    public class SwitchLoopOnce : DialogNode
+    {
+        public SwitchLoopOnce(DialogNode parentNode)
+        {
+            Type = DialogNodeType.SwitchLoopOnce;
+            ParentNode = parentNode;
+            ChildrenNodes = null;
         }
     }
 

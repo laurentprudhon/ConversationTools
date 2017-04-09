@@ -115,15 +115,18 @@ namespace dialogtool
             if (dialogNode.Type == DialogNodeType.GotoNode)
             {
                 var gotoNode = (GotoNode)dialogNode;
-                if (DialogNodesWithId.ContainsKey(gotoNode.TargetNodeId))
+                if (!String.IsNullOrEmpty(gotoNode.TargetNodeId))
                 {
-                    var targetNode = DialogNodesWithId[gotoNode.TargetNodeId];
-                    gotoNode.TargetNode = targetNode;
-                    targetNode.AddDialogNodeReference(gotoNode);
-                }
-                else
-                {
-                    LogMessage(gotoNode.LineNumber, MessageType.InvalidReference, "Goto node with invalid node reference : \"" + gotoNode.TargetNodeId + "\" => dead end");
+                    if (DialogNodesWithId.ContainsKey(gotoNode.TargetNodeId))
+                    {
+                        var targetNode = DialogNodesWithId[gotoNode.TargetNodeId];
+                        gotoNode.TargetNode = targetNode;
+                        targetNode.AddDialogNodeReference(gotoNode);
+                    }
+                    else
+                    {
+                        LogMessage(gotoNode.LineNumber, MessageType.InvalidReference, "Goto node with invalid node reference : \"" + gotoNode.TargetNodeId + "\" => dead end");
+                    }
                 }
             }
             previousNode = dialogNode;

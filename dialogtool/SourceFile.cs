@@ -139,6 +139,9 @@ namespace dialogtool
                 case DialogNodeType.SwitchOnEntityVariables:
                     WriteSwitchOnEntityVariables(xw, (SwitchOnEntityVariables)childNode);
                     break;
+                case DialogNodeType.SwitchLoopOnce:
+                    WriteSwitchLoopOnce(xw, (SwitchLoopOnce)childNode);
+                    break;
                 case DialogNodeType.DirectAnswer:
                     WriteDirectAnswer(xw, (DirectAnswer)childNode);
                     break;
@@ -205,6 +208,13 @@ namespace dialogtool
             xw.WriteAttributeString("ThenOn", childNode.EntityMatch.EntityVariableName2);
             WriteDialogNodeProperties(xw, childNode);
             WriteChildrenNodes(xw, childNode);
+            xw.WriteEndElement();
+        }
+
+        private static void WriteSwitchLoopOnce(XmlWriter xw, SwitchLoopOnce childNode)
+        {
+            xw.WriteStartElement("SwitchLoopOnce");
+            WriteDialogNodeProperties(xw, childNode);
             xw.WriteEndElement();
         }
 

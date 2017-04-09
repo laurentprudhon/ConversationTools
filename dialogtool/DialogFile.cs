@@ -318,6 +318,7 @@ namespace dialogtool
             {
                 if (inputChildElement == switchSecondIfElement)
                 {
+                    AnalyzeSwitchLoopOnce(inlineSwitchDialogNode, switchSecondIfElement);
                     inlineSwitchDialogNode = null;
                     continue;
                 }
@@ -331,11 +332,12 @@ namespace dialogtool
                         AnalyzeDialogVariableConditions(inlineSwitchDialogNode == null ? intent : inlineSwitchDialogNode, inputChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode, ref switchSecondIfElement);
                         break;
                     case "output":
-                        if (DetectDisambiguationQuestion(inputChildElement))
+                        bool skipGotoPattern;
+                        if (DetectDisambiguationQuestion(inputChildElement, out skipGotoPattern, dialog))
                         {
                             AnalyzeDisambiguationQuestion(intent, inputChildElement, dialogVariables);
                         }
-                        else
+                        else if(!skipGotoPattern)
                         {
                             AnalyzeGotoOrAnswerNode(intent, inputChildElement, dialogVariables);
                         }
@@ -345,6 +347,18 @@ namespace dialogtool
                 }
                 isFirstChild = false;
             }
+        }
+
+        private void AnalyzeSwitchLoopOnce(DialogNode parentNode, XElement switchSecondIfElement)
+        {
+            var switchLoopOnce = new SwitchLoopOnce(parentNode);
+            switchLoopOnce.LineNumber = ((IXmlLineInfo)switchSecondIfElement).LineNumber;
+            if (switchSecondIfElement.Attribute("id") != null)
+            {
+                switchLoopOnce.Id = switchSecondIfElement.Attribute("id").Value;
+                dialog.RegisterDialogNode(switchLoopOnce);
+            }
+            parentNode.ChildrenNodes.Add(switchLoopOnce);
         }
 
         private EntityMatch AnalyzeEntityMatch(DialogNode dialogNode, XElement inputElement)
@@ -487,7 +501,7 @@ namespace dialogtool
                                 break;
                             case "SET_AS_USER_INPUT":
                             case "APPEND":
-                                dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.Info, "Action with operator "+operatorName+" ignored while reading the Xml dialog file");
+                                dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.IncorrectPattern, "Action with operator "+operatorName+" ignored while reading the Xml dialog file");
                                 continue;
                             default:
                                 throw new Exception("Line " + ((IXmlLineInfo)action).LineNumber + " : Unexpected action operator " + operatorName);
@@ -498,7 +512,7 @@ namespace dialogtool
                         {
                             if (variableValue.EndsWith(":name}"))
                             {
-                                dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.IncorrectPattern, "Unsupported variable internal field to variable value assignment : " + variableValue + " => " + variableName);
+                                dialog.LogMessage(((IXmlLineInfo)action).LineNumber, MessageType.IncorrectPattern, "Variable internal field to variable value assignment is not supported outside a MatchEntity pattern : " + variableValue + " => " + variableName);
                                 variableValue = null;
                             }
                             else
@@ -536,9 +550,24 @@ namespace dialogtool
             }
         }
 
-        private bool DetectDisambiguationQuestion(XElement outputElement)
+        private bool DetectDisambiguationQuestion(XElement outputElement, out bool skipGotoPattern, IMessageCollector errors)
         {
-            return outputElement.Element("getUserInput") != null;
+            skipGotoPattern = false;
+            if(outputElement.Element("getUserInput") != null)
+            {
+                return true;
+            }
+            else
+            {
+                if(outputElement.Element("prompt") != null &&
+                   outputElement.Element("prompt").Element("item") != null &&
+                   outputElement.Element("input") != null)
+                {
+                    skipGotoPattern = true;
+                    errors.LogMessage(((IXmlLineInfo)outputElement.Element("input")).LineNumber, MessageType.IncorrectPattern, "Disambiguation question pattern WITHOUT getUsetInput node !");
+                }
+                return false;
+            }
         }
 
         private void AnalyzeDisambiguationQuestion(DialogNode parentNode, XElement outputElement, DialogVariablesSimulator dialogVariables)
@@ -619,11 +648,12 @@ namespace dialogtool
             var lastOutputElement = outputElement.Element("output");
             if (lastOutputElement != null)
             {
-                if (DetectDisambiguationQuestion(lastOutputElement))
+                bool skipGotoPattern;
+                if (DetectDisambiguationQuestion(lastOutputElement, out skipGotoPattern, dialog))
                 {
                     AnalyzeDisambiguationQuestion(disambiguationQuestion, lastOutputElement, dialogVariables);
                 }
-                else
+                else if(!skipGotoPattern)
                 {
                     AnalyzeGotoOrAnswerNode(disambiguationQuestion, lastOutputElement, dialogVariables);
                 }
@@ -639,6 +669,7 @@ namespace dialogtool
             {
                 if (getUserInputChildElement == switchSecondIfElement)
                 {
+                    AnalyzeSwitchLoopOnce(inlineSwitchDialogNode, switchSecondIfElement);
                     inlineSwitchDialogNode = null;
                     continue;
                 }
@@ -733,10 +764,6 @@ namespace dialogtool
                 {
                     gotoRef = gotoElement.Attribute("ref").Value;
                 }
-                else
-                {
-                    dialog.LogMessage(((IXmlLineInfo)gotoElement).LineNumber, MessageType.IncorrectPattern, "Goto node without ref attribute => dead end");
-                }
             }
             DialogNode gotoOrAnswerNode = null;
             if (dialog.StartOfDialogNodeId == gotoRef)
@@ -752,8 +779,15 @@ namespace dialogtool
                 gotoOrAnswerNode = new RedirectToLongTail(parentNode, gotoRef, messageExpression, messageText, dialog);
             }
             else
-            {
+            {                
                 gotoOrAnswerNode = new GotoNode(parentNode, gotoRef, messageExpression, messageText, dialog);
+            }
+
+            // Unsupported output pattern
+            if (gotoElement == null && outputOrGotoElement.Element("if") != null)
+            {
+                dialog.LogMessage(((IXmlLineInfo)outputOrGotoElement).LineNumber, MessageType.IncorrectPattern, "Output node pattern different from disambiguation question or goto not supported => part of tree ignored");
+                return;   
             }
 
             SetDialogNodeIdAndLineNumberAndVariableAssignments(gotoOrAnswerNode, elementWithId, new XElement[] { outputOrGotoElement, gotoElement }, dialogVariables, dialog);
@@ -910,6 +944,10 @@ namespace dialogtool
             {
                 // Dialog node
                 var dialogVariablesConditions = new DialogVariableConditions(parentNode, variableConditions, @operator);
+                if(ifElement.Attribute("id") != null && ifElement.Attribute("id").Value == parentNode.Id)
+                {
+                    ifElement.SetAttributeValue("id", null);
+                }
                 SetDialogNodeIdAndLineNumberAndVariableAssignments(dialogVariablesConditions, ifElement, ifElement, dialogVariables, dialog);
                 parentNode.ChildrenNodes.Add(dialogVariablesConditions);
                 dialogNode = dialogVariablesConditions;
@@ -930,10 +968,12 @@ namespace dialogtool
             {
                 if(ifChildElement == switchSecondIfElement)
                 {
+                    AnalyzeSwitchLoopOnce(dialogNode, switchSecondIfElement);
                     continue;
                 }
                 if (ifChildElement == switchSecondIfElementLevel2)
                 {
+                    AnalyzeSwitchLoopOnce(inlineSwitchDialogNode2, switchSecondIfElementLevel2);
                     inlineSwitchDialogNode2 = null;
                     continue;
                 }
@@ -946,11 +986,12 @@ namespace dialogtool
                         AnalyzeDialogVariableConditions(inlineSwitchDialogNode2 == null ? dialogNode : inlineSwitchDialogNode2, ifChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode2, ref switchSecondIfElementLevel2);
                         break;
                     case "output":
-                        if (DetectDisambiguationQuestion(ifChildElement))
+                        bool skipGotoPattern;
+                        if (DetectDisambiguationQuestion(ifChildElement, out skipGotoPattern, dialog))
                         {
                             AnalyzeDisambiguationQuestion(dialogNode, ifChildElement, dialogVariables);
                         }
-                        else
+                        else if(!skipGotoPattern)
                         {
                             AnalyzeGotoOrAnswerNode(dialogNode, ifChildElement, dialogVariables);
                         }
