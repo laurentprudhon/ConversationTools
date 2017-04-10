@@ -52,7 +52,7 @@ namespace dialogtool
                 xw.WriteEndElement();
 
                 xw.WriteStartElement("Concepts");
-                foreach (var concept in dialog.Concepts.Values.OrderBy(c => c.CanonicalValue))
+                foreach (var concept in dialog.Concepts.Values.Distinct().OrderBy(c => c.CanonicalValue))
                 {
                     WriteConcept(xw, concept);
                 }
@@ -342,6 +342,10 @@ namespace dialogtool
                     }
                     xw.WriteString(entityValue.CanonicalValue);
                     xw.WriteEndElement();
+                    foreach (var dialogNode in entityValue.DialogNodeReferences)
+                    {
+                        xw.WriteComment("Referenced by " + dialogNode.Type.ToString() + " node line " + dialogNode.LineNumber);
+                    }
                 }
             }
             xw.WriteEndElement();
@@ -363,6 +367,17 @@ namespace dialogtool
             }
             xw.WriteEndElement();
             xw.WriteEndElement();
+            if(concept.EntityValueReferences != null && concept.EntityValueReferences.Count > 0)
+            {
+                foreach (var entityValue in concept.EntityValueReferences)
+                {
+                    xw.WriteComment("Referenced by entity value " + entityValue.Entity.Name+">"+entityValue.Name + " line " + entityValue.LineNumber);
+                }
+            }
+            else
+            {
+                xw.WriteComment("Never used");
+            }
         }
 
         private static void WriteConstant(XmlWriter xw, Constant constant)
@@ -372,7 +387,11 @@ namespace dialogtool
                 xw.WriteStartElement("Constant");
                 xw.WriteAttributeString("Name", constant.Name);
                 xw.WriteString(constant.Value);
-                xw.WriteEndElement();
+                xw.WriteEndElement();                
+                foreach (var dialogNode in constant.DialogNodeReferences)
+                {
+                    xw.WriteComment("Referenced by " + dialogNode.Type.ToString() + " node line " + dialogNode.LineNumber);
+                }
             }
         }
 
