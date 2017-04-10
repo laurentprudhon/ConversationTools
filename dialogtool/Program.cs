@@ -275,11 +275,25 @@ namespace dialogtool
             // Load dialog file
             string sourceOrDialogFileName;
             Dialog dialog = LoadDialogFile(sourceOrDialogFileInfo, out sourceOrDialogFileName);
+            
+            Console.WriteLine("Dialog file metrics :");
+            var nodeTypeCounts = dialog.ComputeNodesStatistics();
+            foreach(var nodeType in nodeTypeCounts.Keys)
+            {
+                Console.WriteLine("- " + nodeTypeCounts[nodeType] + " " + nodeType.ToString() + " nodes");
+            }
+            Console.WriteLine("- " + dialog.Entities.Values.SelectMany(entity => entity.Values).Count() + " entity values");
+            Console.WriteLine("- " + dialog.Concepts.Values.Distinct().Count() + " concepts");
+            Console.WriteLine("- " + dialog.ConceptsSynonyms.Keys.Count() + " concepts synonyms");
+            Console.WriteLine("");
+
 
             Console.WriteLine(dialog.Errors.Count + " inconsistencies found :");
-            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.DuplicateKey.ToString())).Count() + " duplicate keys");
-            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.IncorrectPattern.ToString())).Count() + " incorrect patterns");
             Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.InvalidReference.ToString())).Count() + " invalid references");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.IncorrectPattern.ToString())).Count() + " incorrect patterns");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.DuplicateKey.ToString())).Count() + " duplicate keys");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.DuplicateConcept.ToString())).Count() + " duplicate concepts");
+            Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.DuplicateSynonym.ToString())).Count() + " duplicate synonyms");
             Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.NeverUsed.ToString())).Count() + " elements never used");
             Console.WriteLine("- " + dialog.Errors.Where(error => error.Contains(MessageType.Info.ToString())).Count() + " infos");
             Console.WriteLine("");

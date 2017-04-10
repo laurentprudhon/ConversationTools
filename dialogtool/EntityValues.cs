@@ -76,7 +76,7 @@ namespace dialogtool
                             var conflictingEntityValue = EntityValueSynonymsDictionary[synonym];
                             if (entityValue.Name != conflictingEntityValue.Name)
                             {
-                                errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Entity " + Name + " : concept synonym \"" + synonym + "\" defined for entity value \"" + entityValue.Name + "\" is conflicting with an identical concept synonym previoulsy defined for entity value \"" + conflictingEntityValue.Name + "\" on line " + conflictingEntityValue.LineNumber);
+                                errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Entity " + Name + " : concept synonym \"" + synonym + "\" defined for entity value \"" + entityValue.Name + "\" is conflicting with an identical concept synonym previoulsy defined for another entity value of the same entity \"" + conflictingEntityValue.Name + "\" on line " + conflictingEntityValue.LineNumber);
                             }
                         }
                     }
@@ -330,8 +330,8 @@ namespace dialogtool
             Synonyms = synonyms;
         }
 
-        public string Id { get; private set; }
-        public string Key { get; private set; }
+        public string Id { get; internal set; }
+        public string Key { get; internal set; }
         public string CanonicalValue { get { return Synonyms[0]; } }
         public IList<string> Synonyms { get; private set; }
 
@@ -343,6 +343,7 @@ namespace dialogtool
         }
 
         internal int LineNumber { get; set; }        
+        internal bool IsDuplicate { get; set; }
     }
 
     public class ConceptGroupWithTheSameSynonym

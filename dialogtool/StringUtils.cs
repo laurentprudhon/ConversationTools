@@ -15,7 +15,7 @@ namespace dialogtool
             {
                 if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
                 {
-                    if (ch == '-' || ch == '_')
+                    if (ch == '_')
                     {
                         builder.Append(' ');
                     }

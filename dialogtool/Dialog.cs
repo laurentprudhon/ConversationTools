@@ -82,7 +82,7 @@ namespace dialogtool
             // Check if all concepts were referenced at least once by entity values
             foreach (var concept in Concepts.Values)
             {
-                if (concept.EntityValueReferences == null)
+                if (concept.EntityValueReferences == null && ! concept.IsDuplicate)
                 {
                     LogMessage(concept.LineNumber, MessageType.NeverUsed, "Concept \"" + (concept.Id != null ? concept.Id : concept.CanonicalValue) + "\" isn't referenced by any entity value : may be osbolete");
                 }
@@ -125,7 +125,7 @@ namespace dialogtool
                     }
                     else
                     {
-                        LogMessage(gotoNode.LineNumber, MessageType.InvalidReference, "Goto node with invalid node reference : \"" + gotoNode.TargetNodeId + "\" => dead end");
+                        LogMessage(gotoNode.LineNumber, MessageType.InvalidReference, "Goto node with invalid node reference : \"" + gotoNode.TargetNodeId + "\" (target node may be offline) => dead end");
                     }
                 }
             }
@@ -161,11 +161,13 @@ namespace dialogtool
         {
             // Check for duplicate synonyms in a single concept
             ISet<string> thisConceptSynonyms = new HashSet<string>();
+            int i = 1;
             foreach (var synonym in concept.Synonyms)
             {
+                i++;
                 if (thisConceptSynonyms.Contains(synonym))
                 {
-                    LogMessage(concept.LineNumber, MessageType.DuplicateKey, "Duplicate synonym : \"" + synonym + "\" inside the same concept \"" + concept.Key + "\"");
+                    LogMessage(concept.LineNumber + i, MessageType.DuplicateSynonym, "Duplicate synonym : \"" + synonym + "\" inside the same concept \"" + concept.Key + "\"");
                 }
                 else
                 {
@@ -174,29 +176,93 @@ namespace dialogtool
             }
 
             // Add concept in dictionary of concepts
-            if (!Concepts.ContainsKey(concept.Key))
+            Concept conceptInDictionary = null;
+            if (!String.IsNullOrEmpty(concept.Id))
             {
-                Concepts.Add(concept.Key, concept);
-
-                // Add concept synonyms in dictionary of synonyms
-                foreach (var synonym in thisConceptSynonyms)
+                if (Concepts.ContainsKey(concept.Id))
                 {
-                    if (ConceptsSynonyms.ContainsKey(synonym))
+                    conceptInDictionary = Concepts[concept.Id];
+                    // Mark second concept as duplicate
+                    concept.IsDuplicate = true;
+                    // Merge second concept synonyms
+                    foreach(var synonym in concept.Synonyms)
                     {
-                        var conceptGroupWithTheSameSynonym = ConceptsSynonyms[synonym];
-                        conceptGroupWithTheSameSynonym.AddConcept(concept);
+                        if(!conceptInDictionary.Synonyms.Contains(synonym))
+                        {
+                            conceptInDictionary.Synonyms.Add(synonym);
+                        }
                     }
-                    else
+                    // Log error message
+                    LogMessage(concept.LineNumber, MessageType.DuplicateConcept, "Duplicate concept nodes found for id \"" + concept.Id + "\" : line " + concept.LineNumber + " and line " + conceptInDictionary.LineNumber);
+                }
+                else if (Concepts.ContainsKey(concept.CanonicalValue))
+                {
+                    conceptInDictionary = Concepts[concept.CanonicalValue];
+                    // Mark second concept as duplicate
+                    concept.IsDuplicate = true;
+                    // Merge second concept synonyms
+                    foreach (var synonym in concept.Synonyms)
                     {
-                        ConceptsSynonyms[synonym] = new ConceptGroupWithTheSameSynonym(synonym, concept);
+                        if (!conceptInDictionary.Synonyms.Contains(synonym))
+                        {
+                            conceptInDictionary.Synonyms.Add(synonym);
+                        }
                     }
+                    // Merge second concept Id
+                    if (String.IsNullOrEmpty(conceptInDictionary.Id))
+                    {
+                        conceptInDictionary.Id = concept.Id;
+                        conceptInDictionary.Key = concept.Id;
+                        Concepts.Add(conceptInDictionary.Id, conceptInDictionary);
+                    }
+                    // Log error message
+                    LogMessage(concept.LineNumber, MessageType.DuplicateConcept, "Duplicate concept nodes found for canonical value \"" + concept.CanonicalValue + "\" : line " + concept.LineNumber + " and line => you should probably merge them" + conceptInDictionary.LineNumber);
+                }
+                else
+                {
+                    conceptInDictionary = concept;
+                    Concepts.Add(concept.Id, concept);
+                    Concepts.Add(concept.CanonicalValue, concept);
                 }
             }
             else
             {
-                var otherConceptNode = Concepts[concept.Key];
-                LogMessage(concept.LineNumber, MessageType.DuplicateKey, "Duplicate concept nodes found for key \"" + concept.Key + "\" : line " + concept.LineNumber + " and line " + otherConceptNode.LineNumber);
-            }            
+                if (Concepts.ContainsKey(concept.CanonicalValue))
+                {
+                    conceptInDictionary = Concepts[concept.CanonicalValue];
+                    // Mark second concept as duplicate
+                    concept.IsDuplicate = true;
+                    // Merge second concept synonyms
+                    foreach (var synonym in concept.Synonyms)
+                    {
+                        if (!conceptInDictionary.Synonyms.Contains(synonym))
+                        {
+                            conceptInDictionary.Synonyms.Add(synonym);
+                        }
+                    }
+                    // Log error message
+                    LogMessage(concept.LineNumber, MessageType.DuplicateConcept, "Duplicate concept nodes found for canonical value \"" + concept.CanonicalValue + "\" : line " + concept.LineNumber + " and line => you should probably merge them" + conceptInDictionary.LineNumber);
+                }
+                else
+                {
+                    conceptInDictionary = concept;
+                    Concepts.Add(concept.CanonicalValue, concept);
+                }
+            }
+                        
+            // Add concept synonyms in dictionary of synonyms
+            foreach (var synonym in thisConceptSynonyms)
+            {
+                if (ConceptsSynonyms.ContainsKey(synonym))
+                {
+                    var conceptGroupWithTheSameSynonym = ConceptsSynonyms[synonym];
+                    conceptGroupWithTheSameSynonym.AddConcept(conceptInDictionary);
+                }
+                else
+                {
+                    ConceptsSynonyms[synonym] = new ConceptGroupWithTheSameSynonym(synonym, conceptInDictionary);
+                }
+            }
         }
 
         internal void OnAllConceptsAdded()
@@ -423,6 +489,33 @@ namespace dialogtool
             }
             variableCondition.SetVariableAndEntityValue(variable, entityValue);
         }
+
+        public IDictionary<DialogNodeType,int> ComputeNodesStatistics()
+        {
+            var nodeTypeCounts = new Dictionary<DialogNodeType, int>();
+            foreach (var value in Enum.GetValues(typeof(DialogNodeType)))
+            {
+                var nodeType = (DialogNodeType)value;
+                nodeTypeCounts.Add(nodeType, 0);
+            }
+            foreach (var intentNode in Intents.Values)
+            {
+                ComputeNodesStatistics(intentNode, nodeTypeCounts);
+            }
+            return nodeTypeCounts;
+        }
+
+        private static void ComputeNodesStatistics(DialogNode parentNode, IDictionary<DialogNodeType, int> nodeTypeCounts)
+        {
+            nodeTypeCounts[parentNode.Type]++;
+            if(parentNode.ChildrenNodes != null)
+            {
+                foreach(var childNode in parentNode.ChildrenNodes)
+                {
+                    ComputeNodesStatistics(childNode, nodeTypeCounts);
+                }
+            }
+        }
     }
 
     public interface IMessageCollector
@@ -434,6 +527,8 @@ namespace dialogtool
     {
         Info,
         DuplicateKey,
+        DuplicateConcept,
+        DuplicateSynonym,
         IncorrectPattern,
         InvalidReference,
         NeverUsed
