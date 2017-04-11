@@ -15,6 +15,7 @@ namespace dialogtool
         static string startFolderLabel = "Main";
         static string intentsFolderLabel = "CM-CIC";
         static string answerFolderLabel = "AnswerNode";
+        static string arrayOfAllowedVariablesPrefix = "ArrayOfAllowed";
 
         string filePath;
         XDocument XmlDocument;
@@ -85,7 +86,60 @@ namespace dialogtool
                         <item>[PromptTag_0]</item>
                     </prompt>
             */
-            dialog.StartOfDialogNodeId = mainFolder.Element("output").Element("output").Attribute("id").Value;
+            var startOfDialogNode = mainFolder.Element("output").Element("output");
+            dialog.StartOfDialogNodeId = startOfDialogNode.Attribute("id").Value;
+
+            /*
+            <output id="output_900001">
+	            <action varName="ArrayOfAllowedSupports" operator="SET_TO">[actions][actions_etrangeres]...</action>
+	            <action varName="ArrayOfAllowedProducts" operator="SET_TO">[assurance_vie][autres_produits]...</action>
+  	            <getUserInput>
+  	                <action varName="Product_Var" operator="SET_TO_BLANK"/>
+  	                ...	
+                    <if>                           
+			            <cond varName="federationGroup" operator="EQUALS">CM</cond>
+                        <goto ref="search_200028">
+                            <action varName="ArrayOfAllowedProducts" operator="APPEND">[bourse_plus]...</action>
+                            <action varName="ArrayOfAllowedSupports" operator="APPEND">[fonds_a_formule]...</action>
+                        </goto>                        
+		            </if>                        
+		            <if>                            
+			            <cond varName="federationGroup" operator="EQUALS">CIC</cond>                            
+                         ...
+            */
+            var arraysOfAllowedValuesNodes = startOfDialogNode.Descendants("action").Where(action => action.Attribute("varName").Value.StartsWith(arrayOfAllowedVariablesPrefix) && action.Attribute("operator").Value == "SET_TO");
+            var arraysOfAllowedValues = new Dictionary<string, string[]>();
+            foreach(var arrayOfAllowedValuesNode in arraysOfAllowedValuesNodes)
+            {
+                var arrayVarName = arrayOfAllowedValuesNode.Attribute("varName").Value;
+                var entityNameFromArray = arrayVarName.Substring(arrayOfAllowedVariablesPrefix.Length, arrayVarName.Length - arrayOfAllowedVariablesPrefix.Length - 1);
+                var allowedValues = arrayOfAllowedValuesNode.Value.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+                arraysOfAllowedValues.Add(entityNameFromArray, allowedValues);
+            }
+
+            if (arraysOfAllowedValues.Keys.Count > 0)
+            {
+                var federationGroupsNodes = startOfDialogNode.Descendants("if").Where(ifNode => ifNode.Element("cond") != null && ifNode.Element("cond").Attribute("varName").Value == "federationGroup" && ifNode.Element("cond").Attribute("operator").Value == "EQUALS");
+                dialog.ArraysOfAllowedValuesByEntityNameAndFederation = new Dictionary<string, IDictionary<string, IList<string>>>();
+                foreach (var entityName in arraysOfAllowedValues.Keys)
+                {
+                    var allowedValuesForThisVariable = arraysOfAllowedValues[entityName];
+                    var allowedValuesByFederation = new Dictionary<string, IList<string>>();
+                    foreach (var federationGroupNode in federationGroupsNodes)
+                    {
+                        var federationGroup = federationGroupNode.Element("cond").Value.Trim();
+
+                        var allowedValuesForThisVariableAndFederation = allowedValuesForThisVariable.ToList();
+                        var specificValuesNode = federationGroupNode.Descendants("action").Where(action => action.Attribute("varName").Value.StartsWith(arrayOfAllowedVariablesPrefix + entityName) && action.Attribute("operator").Value == "APPEND").FirstOrDefault();
+                        if (specificValuesNode != null)
+                        {
+                            allowedValuesForThisVariableAndFederation.AddRange(specificValuesNode.Value.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries));
+                        }
+                        allowedValuesByFederation.Add(federationGroup, allowedValuesForThisVariableAndFederation);
+                    }
+                    dialog.ArraysOfAllowedValuesByEntityNameAndFederation.Add(entityName, allowedValuesByFederation);
+                }
+            }
         }
 
         private void AnalyzeAnswerFolder(XElement answerFolder)
@@ -941,7 +995,7 @@ namespace dialogtool
 
             // DialogVariableConditions node
             if(dialogNode == null)
-            {
+            {                
                 // Dialog node
                 var dialogVariablesConditions = new DialogVariableConditions(parentNode, variableConditions, @operator);
                 if(ifElement.Attribute("id") != null && ifElement.Attribute("id").Value == parentNode.Id)
@@ -958,6 +1012,48 @@ namespace dialogtool
                     dialog.LinkDialogVariableConditionToDialogVariableAndEntityValue(dialogVariablesConditions, variableCondition, dialogVariables);
                 }
                 dialogVariables.AddDialogVariableConditions(dialogVariablesConditions);
+
+                // Check for value restriction by federationGroup
+                if (dialog.ArraysOfAllowedValuesByEntityNameAndFederation != null)
+                {
+                    if (ifElement.Element("if") != null && ifElement.Element("if").Element("cond") != null &&
+                        ifElement.Element("if").Element("cond").Attribute("varName").Value.StartsWith(arrayOfAllowedVariablesPrefix) &&
+                        ifElement.Element("if").Element("cond").Attribute("operator").Value == "CONTAINS")
+                    {
+                        // Jump to inner if element
+                        ifElement = ifElement.Element("if");
+                        // Look at additional values restriction
+                        var restrictionCond = ifElement.Element("cond");
+                        var arrayVarName = restrictionCond.Attribute("varName").Value;
+                        var entityVarExpression = restrictionCond.Value.Trim();
+                        if (!(entityVarExpression.StartsWith("[{") && entityVarExpression.EndsWith("}]")))
+                        {
+                            dialog.LogMessage(((IXmlLineInfo)restrictionCond).LineNumber, MessageType.IncorrectPattern, "Variable value expression should be of the form [{Product_Var}] instead of : " + entityVarExpression);
+                        }
+                        else
+                        {
+                            var entityVarName = entityVarExpression.Substring(2, entityVarExpression.Length - 4);
+                            var entityNameFromArray = arrayVarName.Substring(arrayOfAllowedVariablesPrefix.Length, arrayVarName.Length - arrayOfAllowedVariablesPrefix.Length - 1);
+                            if (!entityVarName.StartsWith(entityNameFromArray))
+                            {
+                                dialog.LogMessage(((IXmlLineInfo)restrictionCond).LineNumber, MessageType.IncorrectPattern, "Mismatch between array of allowed values name : " + arrayVarName + ", and entity variable name : " + entityVarName);
+                            }
+                            else
+                            {
+                                IDictionary<string, IList<string>> allowedValuesByFederationGroup = null;
+                                if (dialog.ArraysOfAllowedValuesByEntityNameAndFederation.TryGetValue(entityNameFromArray, out allowedValuesByFederationGroup))
+                                {
+                                    var variableValueRestriction = new DialogVariableCheck(entityVarName, allowedValuesByFederationGroup);
+                                    dialogVariablesConditions.AddVariableValueRestriction(variableValueRestriction, dialog);
+                                }
+                                else
+                                {
+                                    dialog.LogMessage(((IXmlLineInfo)restrictionCond).LineNumber, MessageType.InvalidReference, "Reference to an unknwon array of allowed values: " + arrayVarName);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // Children nodes of dialog variables conditions

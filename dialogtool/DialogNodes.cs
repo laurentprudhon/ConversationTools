@@ -130,10 +130,32 @@ namespace dialogtool
             ChildrenNodes = new List<DialogNode>();
             VariableConditions = variableConditions;
             Operator = @operator;
+            
         }
 
         public IList<DialogVariableCondition> VariableConditions { get; private set; }
         public ConditionOperator Operator { get; private set; }
+
+        public DialogVariableCheck VariableValueRestriction { get; private set; }
+        public void AddVariableValueRestriction(DialogVariableCheck variableValueRestriction, IMessageCollector errors)
+        {
+            // Check variable name
+            bool variableFoundInConditions = false;
+            foreach(var condition in VariableConditions)
+            {
+                if(condition.VariableName == variableValueRestriction.VariableName)
+                {
+                    variableFoundInConditions = true;
+                    break;
+                }
+            }
+            if(!variableFoundInConditions)
+            {
+                errors.LogMessage(LineNumber, MessageType.IncorrectPattern, "Allowed variable values restricted by federation group for variable name " + variableValueRestriction.VariableName + ", but this variable name wasn't referenced in the conditions nodes");
+            }
+
+            VariableValueRestriction = variableValueRestriction;
+        }
 
         public string Expression
         {
@@ -215,6 +237,19 @@ namespace dialogtool
     {
         And,
         Or
+    }
+
+    public class DialogVariableCheck
+    {
+        public DialogVariableCheck(string variableName, IDictionary<string, IList<string>> allowedValuesByFederationGroup)
+        {
+            VariableName = variableName;
+            AllowedValuesByFederationGroup = allowedValuesByFederationGroup;
+        }
+
+        public string VariableName { get; private set; }
+
+        public IDictionary<string, IList<string>> AllowedValuesByFederationGroup { get; private set; }
     }
     
     public class DisambiguationQuestion : DialogNode

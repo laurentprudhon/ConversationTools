@@ -37,6 +37,7 @@ namespace dialogtool
                 xw.WriteEndElement();
                 xw.WriteElementString("LongTailAnswerNodeId", dialog.LongTailAnswerNodeId);
 
+
                 xw.WriteStartElement("Intents");
                 foreach (var intent in dialog.Intents.Values.OrderBy(i => i.Name))
                 {
@@ -47,7 +48,7 @@ namespace dialogtool
                 xw.WriteStartElement("Entities");
                 foreach (var entity in dialog.Entities.Values.OrderBy(e => e.Name))
                 {
-                    WriteEntity(xw, entity);
+                    WriteEntity(xw, entity, dialog);
                 }
                 xw.WriteEndElement();
 
@@ -194,6 +195,10 @@ namespace dialogtool
             xw.WriteStartElement("If");
             string expression = childNode.Expression;
             xw.WriteAttributeString("Expr", expression);
+            if(childNode.VariableValueRestriction != null)
+            {
+                xw.WriteAttributeString("RestrictAllowedValuesByFederationGroupIn", childNode.VariableValueRestriction.VariableName);
+            }
             WriteDialogNodeProperties(xw, childNode);
             WriteChildrenNodes(xw, childNode);
             xw.WriteEndElement();
@@ -325,10 +330,20 @@ namespace dialogtool
             xw.WriteEndElement();
         }
 
-        private static void WriteEntity(XmlWriter xw, Entity entity)
+        private static void WriteEntity(XmlWriter xw, Entity entity, Dialog dialog)
         {
             xw.WriteStartElement("Entity");
             xw.WriteAttributeString("Name", entity.Name);
+
+            // Arrays of allowed values by federation
+            var entitySimpleName = entity.Name.Split('_')[0];                                   // <= TO DO : improve this
+            entitySimpleName = entitySimpleName[0] + entitySimpleName.Substring(1).ToLower();   // <= TO DO : improve this
+            IDictionary<string, IList<string>> valuesAllowedByFederation = null;
+            if (dialog.ArraysOfAllowedValuesByEntityNameAndFederation != null && dialog.ArraysOfAllowedValuesByEntityNameAndFederation.ContainsKey(entitySimpleName))
+            {
+                valuesAllowedByFederation = dialog.ArraysOfAllowedValuesByEntityNameAndFederation[entitySimpleName];
+            }
+
             xw.WriteStartElement("Values");
             foreach(var entityValue in entity.Values.OrderBy(v => v.Name))
             {
@@ -340,6 +355,31 @@ namespace dialogtool
                     {
                         xw.WriteAttributeString("ConceptId", entityValue.Concept.Id);
                     }
+                    if(valuesAllowedByFederation != null)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        bool isFirst = true;
+                        foreach (var federationGroup in valuesAllowedByFederation.Keys)
+                        {
+                            var valuesForThisFederationGroup = valuesAllowedByFederation[federationGroup];
+                            if(valuesForThisFederationGroup.Contains(entityValue.Name))
+                            { 
+                                if (isFirst)
+                                {
+                                    isFirst = false;
+                                }
+                                else
+                                {
+                                    sb.Append(',');
+                                }
+                                sb.Append(federationGroup);
+                            }
+                        }
+                        if (!isFirst)
+                        {
+                            xw.WriteAttributeString("RestrictedToFederationGroups", sb.ToString());
+                        }
+                    }
                     xw.WriteString(entityValue.CanonicalValue);
                     xw.WriteEndElement();
                     foreach (var dialogNode in entityValue.DialogNodeReferences)
@@ -349,6 +389,7 @@ namespace dialogtool
                 }
             }
             xw.WriteEndElement();
+
             xw.WriteEndElement();
         }
 

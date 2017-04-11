@@ -37,6 +37,7 @@ namespace dialogtool
 
         public IDictionary<string, Constant> Constants { get; private set; }
         public IDictionary<string, DialogVariable> Variables { get; private set; }
+        public IDictionary<string, IDictionary<string, IList<string>>> ArraysOfAllowedValuesByEntityNameAndFederation { get; internal set; }
 
         public IDictionary<string, DialogNode> DialogNodesWithId { get; private set; }
         public string StartOfDialogNodeId { get; set; }
