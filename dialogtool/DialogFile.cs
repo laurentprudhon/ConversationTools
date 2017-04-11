@@ -112,7 +112,7 @@ namespace dialogtool
             foreach(var arrayOfAllowedValuesNode in arraysOfAllowedValuesNodes)
             {
                 var arrayVarName = arrayOfAllowedValuesNode.Attribute("varName").Value;
-                var entityNameFromArray = arrayVarName.Substring(arrayOfAllowedVariablesPrefix.Length, arrayVarName.Length - arrayOfAllowedVariablesPrefix.Length - 1);
+                var entityNameFromArray = GetEntityNameFromAllowedValuesArrayName(arrayVarName);
                 var allowedValues = arrayOfAllowedValuesNode.Value.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
                 arraysOfAllowedValues.Add(entityNameFromArray, allowedValues);
             }
@@ -130,7 +130,8 @@ namespace dialogtool
                         var federationGroup = federationGroupNode.Element("cond").Value.Trim();
 
                         var allowedValuesForThisVariableAndFederation = allowedValuesForThisVariable.ToList();
-                        var specificValuesNode = federationGroupNode.Descendants("action").Where(action => action.Attribute("varName").Value.StartsWith(arrayOfAllowedVariablesPrefix + entityName) && action.Attribute("operator").Value == "APPEND").FirstOrDefault();
+                        var arrayVarName = GetAllowedValuesArrayNameFromEntityName(entityName);
+                        var specificValuesNode = federationGroupNode.Descendants("action").Where(action => action.Attribute("varName").Value.Equals(arrayVarName) && action.Attribute("operator").Value == "APPEND").FirstOrDefault();
                         if (specificValuesNode != null)
                         {
                             allowedValuesForThisVariableAndFederation.AddRange(specificValuesNode.Value.Split(new char[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries));
@@ -140,6 +141,21 @@ namespace dialogtool
                     dialog.ArraysOfAllowedValuesByEntityNameAndFederation.Add(entityName, allowedValuesByFederation);
                 }
             }
+        }
+
+        private static string GetEntityNameFromAllowedValuesArrayName(string arrayVarName)
+        {
+            var entityLabel = arrayVarName.Substring(arrayOfAllowedVariablesPrefix.Length, arrayVarName.Length - arrayOfAllowedVariablesPrefix.Length - 1);
+            var entityName = entityLabel.ToUpper() + "_ENTITY";
+            return entityName;
+        }
+        
+        private string GetAllowedValuesArrayNameFromEntityName(string entityName)
+        {
+            var entityLabel = entityName.Split('_')[0].ToLower();
+            entityLabel = Char.ToUpper(entityLabel[0]) + entityLabel.Substring(1);
+            var arrayVarName = arrayOfAllowedVariablesPrefix + entityLabel + "s";
+            return arrayVarName;
         }
 
         private void AnalyzeAnswerFolder(XElement answerFolder)
@@ -1033,24 +1049,38 @@ namespace dialogtool
                         else
                         {
                             var entityVarName = entityVarExpression.Substring(2, entityVarExpression.Length - 4);
-                            var entityNameFromArray = arrayVarName.Substring(arrayOfAllowedVariablesPrefix.Length, arrayVarName.Length - arrayOfAllowedVariablesPrefix.Length - 1);
-                            if (!entityVarName.StartsWith(entityNameFromArray))
+                            string entityLabel = arrayVarName.Substring(arrayOfAllowedVariablesPrefix.Length, arrayVarName.Length - arrayOfAllowedVariablesPrefix.Length - 1);
+                            if (!entityVarName.StartsWith(entityLabel))
                             {
                                 dialog.LogMessage(((IXmlLineInfo)restrictionCond).LineNumber, MessageType.IncorrectPattern, "Mismatch between array of allowed values name : " + arrayVarName + ", and entity variable name : " + entityVarName);
                             }
                             else
                             {
+                                var entityNameFromArray = GetEntityNameFromAllowedValuesArrayName(arrayVarName);
                                 IDictionary<string, IList<string>> allowedValuesByFederationGroup = null;
                                 if (dialog.ArraysOfAllowedValuesByEntityNameAndFederation.TryGetValue(entityNameFromArray, out allowedValuesByFederationGroup))
                                 {
                                     var variableValueRestriction = new DialogVariableCheck(entityVarName, allowedValuesByFederationGroup);
-                                    dialogVariablesConditions.AddVariableValueRestriction(variableValueRestriction, dialog);
+                                    dialogVariablesConditions.AddVariableValuesRestriction(variableValueRestriction, dialog);
                                 }
                                 else
                                 {
-                                    dialog.LogMessage(((IXmlLineInfo)restrictionCond).LineNumber, MessageType.InvalidReference, "Reference to an unknwon array of allowed values: " + arrayVarName);
+                                    dialog.LogMessage(((IXmlLineInfo)restrictionCond).LineNumber, MessageType.InvalidReference, "Reference to an unknown array of allowed values: " + arrayVarName);
                                 }
                             }
+                        }
+                    }
+
+                    // Check variable values restrictions are applied each time a restricted entity value is tested in a condition
+                    foreach (var condition in dialogVariablesConditions.VariableConditions)
+                    {
+                        if(condition.EntityValue != null && condition.EntityValue.AllowedInFederationGroups != null && 
+                            condition.EntityValue.AllowedInFederationGroups.Count < dialog.ArraysOfAllowedValuesByEntityNameAndFederation[condition.EntityValue.Entity.Name].Keys.Count() && 
+                            dialogVariablesConditions.VariableValuesRestriction == null &&
+                            dialogVariables.TryGetVariableValue("federationGroup") == null)
+                        {
+                            dialog.LogMessage(dialogVariablesConditions.LineNumber, MessageType.IncorrectPattern, "Dialog variable condition references entity value : " +condition.EntityValue.Entity.Name + " > " + condition.EntityValue.Name + ", this value is not allowed in all federation groups : add a new \"if\" node below the current condition to check if the entity value is allowed for the current federation group");
+                            break;
                         }
                     }
                 }

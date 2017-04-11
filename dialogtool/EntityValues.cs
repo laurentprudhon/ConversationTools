@@ -305,6 +305,13 @@ namespace dialogtool
 
         public Concept Concept { get; set; }
 
+        public IList<string> AllowedInFederationGroups { get; private set; }
+        internal void AddFederationGroup(string federationGroup)
+        {
+            if (AllowedInFederationGroups == null) AllowedInFederationGroups = new List<string>();
+            AllowedInFederationGroups.Add(federationGroup);
+        }
+
         public IList<DialogNode> DialogNodeReferences { get; private set; }
         internal void AddDialogNodeReference(DialogNode dialogNode)
         {

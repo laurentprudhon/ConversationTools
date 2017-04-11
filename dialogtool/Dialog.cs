@@ -364,7 +364,36 @@ namespace dialogtool
                     }
                 }
             }
-        }
+            // Compute list of federation groups allowed for each entity value
+            if (ArraysOfAllowedValuesByEntityNameAndFederation != null)
+            {
+                foreach (var entity in Entities.Values)
+                {
+                    // Arrays of allowed values by federation
+                    IDictionary<string, IList<string>> valuesAllowedByFederation = null;
+                    ArraysOfAllowedValuesByEntityNameAndFederation.TryGetValue(entity.Name, out valuesAllowedByFederation);
+                    if (valuesAllowedByFederation != null)
+                    {
+                        foreach (var entityValue in entity.EntityValueNamesDictionary.Values)
+                        {
+                            foreach (var federationGroup in valuesAllowedByFederation.Keys)
+                            {
+                                var valuesForThisFederationGroup = valuesAllowedByFederation[federationGroup];
+                                if (valuesForThisFederationGroup.Contains(entityValue.Name))
+                                {
+                                    entityValue.AddFederationGroup(federationGroup);
+                                }
+                            }
+                            if(entityValue.AllowedInFederationGroups == null)
+                            {
+                                LogMessage(entityValue.LineNumber, MessageType.Info, "Entity value : " + entity.Name + " > " + entityValue.Name + " is not allowed in any federation group");
+                            }
+                        }
+                    }
+
+                }
+            }
+        }            
 
         internal void RegisterDialogNode(DialogNode dialogNode)
         {

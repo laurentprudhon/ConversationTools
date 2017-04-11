@@ -136,8 +136,8 @@ namespace dialogtool
         public IList<DialogVariableCondition> VariableConditions { get; private set; }
         public ConditionOperator Operator { get; private set; }
 
-        public DialogVariableCheck VariableValueRestriction { get; private set; }
-        public void AddVariableValueRestriction(DialogVariableCheck variableValueRestriction, IMessageCollector errors)
+        public DialogVariableCheck VariableValuesRestriction { get; private set; }
+        public void AddVariableValuesRestriction(DialogVariableCheck variableValueRestriction, IMessageCollector errors)
         {
             // Check variable name
             bool variableFoundInConditions = false;
@@ -153,8 +153,7 @@ namespace dialogtool
             {
                 errors.LogMessage(LineNumber, MessageType.IncorrectPattern, "Allowed variable values restricted by federation group for variable name " + variableValueRestriction.VariableName + ", but this variable name wasn't referenced in the conditions nodes");
             }
-
-            VariableValueRestriction = variableValueRestriction;
+            VariableValuesRestriction = variableValueRestriction;
         }
 
         public string Expression
