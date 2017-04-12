@@ -868,7 +868,7 @@ namespace dialogtool
             }
             if (gotoOrAnswerNode.Type == DialogNodeType.FatHeadAnswers)
             {
-                ((FatHeadAnswers)gotoOrAnswerNode).GenerateMappingUris(dialogVariables, dialog.MappingUriConfig);
+                ((FatHeadAnswers)gotoOrAnswerNode).GenerateMappingUris(dialogVariables, dialog.MappingUriConfig, dialog.ArraysOfAllowedValuesByEntityNameAndFederation);
             }
             if (gotoOrAnswerNode.Type == DialogNodeType.GotoNode)
             {

@@ -58,8 +58,14 @@ namespace dialogtool
 
         // Mapping URIs generation
 
-        public static string[] GenerateMappingURIs(DialogVariablesSimulator dialogVariablesSimulator, MappingUriConfig mappingUriConfig, out bool redirectToLongTail)
+        public static string[] GenerateMappingURIs(DialogVariablesSimulator dialogVariablesSimulator, MappingUriConfig mappingUriConfig, IDictionary<string, IDictionary<string, IList<string>>> arraysOfAllowedValuesByEntityNameAndFederation, out bool redirectToLongTail)
         {
+            IList<string> federationGroups = null;
+            if(arraysOfAllowedValuesByEntityNameAndFederation != null)
+            {
+                federationGroups = arraysOfAllowedValuesByEntityNameAndFederation.Values.First().Keys.ToList();
+            }
+
             // Redirect to long tail ?
             var redirectToLongTailVariableName = mappingUriConfig == MappingUriConfig.Insurance ? Insurance_RedirectToLongTailVariable : Savings_RedirectToLongTailVariable;
             var redirectToLongTailValue = dialogVariablesSimulator.TryGetVariableValue(redirectToLongTailVariableName);
@@ -91,6 +97,11 @@ namespace dialogtool
             for(int i = 0; i < mappingUriSegments.Length; i++)
             {
                 mappingUriValues[i] = dialogVariablesSimulator.TryGetVariableValues(mappingUriSegments[i][1]);
+                // Generate mapping URIs for all federation groups if needed
+                if(mappingUriValues[i] == null && mappingUriSegments[i][1] == "federationGroup")
+                {
+                    mappingUriValues[i] = federationGroups;
+                }
             }
             var indexes = new int[mappingUriSegments.Length];
             int count = 0;
@@ -109,10 +120,32 @@ namespace dialogtool
             var result = new string[count];
             for (int cnt = 0; cnt < count; cnt++)
             {
+                string federationGroup = null;
                 for (int i = 0; i < mappingUriSegments.Length; i++)
                 {
                     if (indexes[i] >= 0)
                     {
+                        // Check if this combination of entity values is allowed for the federation group
+                        if(mappingUriSegments[i][1] == "federationGroup")
+                        {
+                            federationGroup = mappingUriValues[i][indexes[i]];
+                        }
+                        else if(federationGroup != null)
+                        {
+                            var entityName = mappingUriSegments[i][0].ToUpper();
+                            IDictionary<string, IList<string>> arraysOfAllowedValuesByFederation = null;
+                            if (arraysOfAllowedValuesByEntityNameAndFederation.TryGetValue(entityName, out arraysOfAllowedValuesByFederation))
+                            {
+                                var arrayOfAllowedValues = arraysOfAllowedValuesByFederation[federationGroup];
+                                if (!arrayOfAllowedValues.Contains(mappingUriValues[i][indexes[i]]))
+                                {
+                                    // Mapping URI not allowed, because one of its entity value is not supported for the current federation group
+                                    // => exit the loop
+                                    break;
+                                }
+                            }
+                        }
+
                         result[cnt] += "/" + mappingUriSegments[i][0] + "/" + mappingUriValues[i][indexes[i]];
                     }
                 }
@@ -139,7 +172,13 @@ namespace dialogtool
                     }
                 }
             }
-            return result;
+
+            var compactResult = new List<string>();
+            foreach(var uri in result)
+            {
+                if (uri != null) compactResult.Add(uri);
+            }
+            return compactResult.ToArray();
         }
 
         public static string ComputeMappingURI(IDictionary<string, string> variablesValues, MappingUriConfig mappingUriConfig, out bool redirectToLongTail)

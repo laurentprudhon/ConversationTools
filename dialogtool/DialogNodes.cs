@@ -418,11 +418,11 @@ namespace dialogtool
         public DialogVariable[] EntityVariablesNotExplicitlySet { get; private set; }
         public string[] MappingUris { get; private set; }
 
-        public void GenerateMappingUris(DialogVariablesSimulator dialogVariables, MappingUriGenerator.MappingUriConfig mappingUriConfig)
+        public void GenerateMappingUris(DialogVariablesSimulator dialogVariables, MappingUriGenerator.MappingUriConfig mappingUriConfig, IDictionary<string, IDictionary<string, IList<string>>> arraysOfAllowedValuesByEntityNameAndFederation)
         {
             EntityVariablesNotExplicitlySet = dialogVariables.ResetEntityVariablesNotExplicitlySet(MappingUriGenerator.GetEntityVariables(mappingUriConfig));
             bool redirectToLongTail;
-            MappingUris = MappingUriGenerator.GenerateMappingURIs(dialogVariables, mappingUriConfig, out redirectToLongTail);
+            MappingUris = MappingUriGenerator.GenerateMappingURIs(dialogVariables, mappingUriConfig, arraysOfAllowedValuesByEntityNameAndFederation, out redirectToLongTail);
             if (redirectToLongTail)
             {
                 Type = DialogNodeType.RedirectToLongTail;
