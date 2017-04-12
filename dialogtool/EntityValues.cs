@@ -296,7 +296,7 @@ namespace dialogtool
         {
             Entity = entity;
             Name = name;
-            CanonicalValue = StringUtils.RemoveDiacriticsAndDashesUnderscores(canonicalValue);
+            CanonicalValue = StringUtils.RemoveDiacriticsAndNonAlphanumericChars(canonicalValue);
         }
 
         public Entity Entity { get; private set; }
@@ -329,7 +329,7 @@ namespace dialogtool
             // Ignore accented chars in synonyms
             for(int i = 0; i < synonyms.Count; i++)
             {
-                synonyms[i] = StringUtils.RemoveDiacriticsAndDashesUnderscores(synonyms[i]);
+                synonyms[i] = StringUtils.RemoveDiacriticsAndNonAlphanumericChars(synonyms[i]);
             }
 
             Id = id;

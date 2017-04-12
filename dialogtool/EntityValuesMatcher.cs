@@ -73,7 +73,7 @@ namespace dialogtool
         public static EntityValuesMatchResult MatchEntityValues(IEnumerable<Entity> entities, string originalText, IDictionary<string,ConceptGroupWithTheSameSynonym> conceptsSynonyms, Regex conceptsRegex)
         {
             // Remove accented characters before the matching process
-            var textWithoutAccentedChars = StringUtils.RemoveDiacriticsAndDashesUnderscores(originalText);
+            var textWithoutAccentedChars = StringUtils.RemoveDiacriticsAndNonAlphanumericChars(originalText);
 
             IDictionary<int[],ConceptSubstitution> conceptSubstitutions;
             var textReplacedWithConcepts = ReplaceTextWithConcepts(textWithoutAccentedChars, conceptsSynonyms, conceptsRegex, out conceptSubstitutions);
