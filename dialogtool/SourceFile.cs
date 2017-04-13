@@ -242,6 +242,7 @@ namespace dialogtool
             xw.WriteStartElement("DisambiguationQuestion");
             WriteDialogNodeProperties(xw, childNode);
             xw.WriteElementString("Message", childNode.QuestionExpression);
+            xw.WriteComment(childNode.QuestionText);
             if (childNode.DisambiguationOptions != null && childNode.DisambiguationOptions.Count > 0)
             {
                 xw.WriteStartElement("Options");
