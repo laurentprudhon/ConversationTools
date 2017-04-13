@@ -125,7 +125,30 @@ namespace dialogtool
                         }
                         break;
                     case DialogNodeType.SwitchLoopOnce:
-                        -- here --
+                        var switchLoopNode = (SwitchLoopOnce)childNode;
+                        switchNode = (SwitchOnEntityVariables)switchLoopNode.ParentNode;
+                        // loop only if variable2 not null
+                        string var2Value = null;
+                        if (variablesValues.TryGetValue(switchNode.EntityMatch.EntityVariableName2, out var2Value))
+                        {
+                            if (!String.IsNullOrEmpty(var2Value))
+                            {
+                                // Set variable1 to variable 2 and reset variable 2
+                                variablesValues[switchNode.EntityMatch.EntityVariableName1] = var2Value;
+                                variablesValues[switchNode.EntityMatch.EntityVariableName2] = null;
+
+                                // Store the result of this execution
+                                var nodeExecution = new DialogNodeExecution(switchLoopNode);
+                                result.AddDialogNodeExecution(nodeExecution);
+
+                                // Adjust variables values
+                                ExecuteVariableAssignments(switchLoopNode, variablesValues);
+
+                                // Loop back to switch node
+                                SelectChildNode(dialog, variablesValues, switchNode.ParentNode, switchNode, result);
+                                return;
+                            }
+                        }
                         break;
                     case DialogNodeType.DialogVariableConditions:
                         var conditionsNode = (DialogVariableConditions)childNode;
@@ -276,6 +299,24 @@ namespace dialogtool
             DialogNodesExecutionPath.Add(dialogNodeExecution);
         }
 
+        public DialogNodeExecution ResultNode
+        {
+            get { return DialogNodesExecutionPath.Count > 0 ? DialogNodesExecutionPath[DialogNodesExecutionPath.Count - 1] : null;  }
+        }
+        public string ResultString
+        {
+            get {
+                if (ResultNode != null)
+                {
+                    return ResultNode.ToString();
+                }
+                else
+                {
+                    return String.Empty;
+                }
+            }
+        }
+
         public IDictionary<string, string> VariablesValues { get; private set; }
 
         public IList<string> Messages { get; private set; }
@@ -310,8 +351,7 @@ namespace dialogtool
         {
             if (oldResult.DialogNodesExecutionPath.Count >= 1 && this.DialogNodesExecutionPath.Count >= 1)
             {
-                return oldResult.DialogNodesExecutionPath[oldResult.DialogNodesExecutionPath.Count - 1].ToString() ==
-                       this.DialogNodesExecutionPath[this.DialogNodesExecutionPath.Count - 1].ToString();
+                return oldResult.ResultString == this.ResultString;
             }
             else
             {

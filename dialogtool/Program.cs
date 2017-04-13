@@ -399,6 +399,7 @@ namespace dialogtool
             Console.WriteLine("Reading " + annotatedQuestionsFileInfo.Name + " ... ");
             int questionCount = 0;
             IList<string> impacts = new List<string>();
+            impacts.Add("id;question;intent;new result;oldresult;new result trace;old result trace");
             using (StreamReader sr = new StreamReader(annotatedQuestionsFileInfo.FullName, Encoding.GetEncoding("iso8859-1")))
             {
                 string line = null;
@@ -416,9 +417,9 @@ namespace dialogtool
                     var oldResult = DialogInterpreter.AnalyzeInitialQuestion(oldDialog, questionId, questionText, intentName);
 
                     // Compare results
-                    if(!newResult.ReturnsSameResultAs(oldResult))
+                    if (!newResult.ReturnsSameResultAs(oldResult))
                     {
-                        impacts.Add(newResult.QuestionId + ";" + newResult.QuestionText + ";" + newResult.ToString() + ";" + oldResult.ToString());
+                        impacts.Add(newResult.QuestionId + ";" + newResult.QuestionText + ";" + newResult.IntentName + ";" + newResult.ResultString + ";" + oldResult.ResultString + ";" + newResult.ToString() + ";" + oldResult.ToString());
                     }
 
                     questionCount++;
