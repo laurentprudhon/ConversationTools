@@ -218,11 +218,12 @@ namespace dialogtool
 
             // Build the mapping URI
             bool redirectToLongTail;
-            var mappingUri = MappingUriGenerator.ComputeMappingURI(variablesValues, dialog.MappingUriConfig, out redirectToLongTail);
+            bool directAnswserValueNotSupportedInFederation;
+            var mappingUri = MappingUriGenerator.ComputeMappingURI(variablesValues, dialog.MappingUriConfig, out redirectToLongTail, out directAnswserValueNotSupportedInFederation);
 
             // Store the result of this execution
             DialogNodeExecution nodeExecution = null;
-            if (redirectToLongTail || String.IsNullOrEmpty(mappingUri))
+            if (redirectToLongTail || directAnswserValueNotSupportedInFederation || String.IsNullOrEmpty(mappingUri))
             {
                 nodeExecution = new DialogNodeExecution(fatHeadAnswerNode);
             }

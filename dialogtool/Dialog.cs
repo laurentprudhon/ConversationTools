@@ -217,7 +217,7 @@ namespace dialogtool
                         Concepts.Add(conceptInDictionary.Id, conceptInDictionary);
                     }
                     // Log error message
-                    LogMessage(concept.LineNumber, MessageType.DuplicateConcept, "Duplicate concept nodes found for canonical value \"" + concept.CanonicalValue + "\" : line " + concept.LineNumber + " and line => you should probably merge them" + conceptInDictionary.LineNumber);
+                    LogMessage(concept.LineNumber, MessageType.DuplicateConcept, "Duplicate concept nodes found for canonical value \"" + concept.CanonicalValue + "\" : line " + concept.LineNumber + " and line " + conceptInDictionary.LineNumber + " => you should probably merge them");
                 }
                 else
                 {
@@ -242,7 +242,7 @@ namespace dialogtool
                         }
                     }
                     // Log error message
-                    LogMessage(concept.LineNumber, MessageType.DuplicateConcept, "Duplicate concept nodes found for canonical value \"" + concept.CanonicalValue + "\" : line " + concept.LineNumber + " and line => you should probably merge them" + conceptInDictionary.LineNumber);
+                    LogMessage(concept.LineNumber, MessageType.DuplicateConcept, "Duplicate concept nodes found for canonical value \"" + concept.CanonicalValue + "\" : line " + concept.LineNumber + " and line " + conceptInDictionary.LineNumber + " => you should probably merge them");
                 }
                 else
                 {
@@ -303,7 +303,7 @@ namespace dialogtool
                 }
                 else
                 {
-                    LogMessage(entityValue.LineNumber, MessageType.InvalidReference, "Entity value " + entityValue.Entity.Name + " > \"" + entityValue.Name + "\" => invalid concept reference : " + conceptId);
+                    LogMessage(entityValue.LineNumber, MessageType.InvalidReference, "Entity value " + entityValue.Entity.Name + " > \"" + entityValue.Name + "\" => invalid concept reference : " + conceptId + " (a conflicting concept with the same canonical value but a different id may have been defined before)");
                 }
             }
             else if (Concepts.ContainsKey(entityValue.CanonicalValue))

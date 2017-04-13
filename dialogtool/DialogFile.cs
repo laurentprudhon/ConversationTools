@@ -520,6 +520,14 @@ namespace dialogtool
                 variableName2 = null;
             }
 
+            // Check unexpected children nodes inside entity match pattern
+            if(inputElement.Element("if") != null)
+            {
+                // TO DO : need to support this
+                var unexpectedChildElement = inputElement.Element("if");
+                dialog.LogMessage(((IXmlLineInfo)unexpectedChildElement).LineNumber, MessageType.IncorrectPattern, "Unsupported if child element inside an entity match pattern : you should move this element outside of the input node");
+            }
+
             var entityMatch = new EntityMatch(entityName, variableName1, variableName2);
             entityMatch.LineNumber = ((IXmlLineInfo)inputElement).LineNumber;            
             dialog.LinkEntityMatchToEntityAndDialogVariables(dialogNode, entityMatch);

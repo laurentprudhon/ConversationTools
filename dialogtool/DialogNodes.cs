@@ -274,7 +274,7 @@ namespace dialogtool
             EntityMatch = entityMatch;
             if (entityMatch == null)
             {
-                dialog.LogMessage(LineNumber, MessageType.IncorrectPattern, "Disambiguation question \"" + QuestionText + "\" without any entity match => dead end");
+                dialog.LogMessage(LineNumber, MessageType.IncorrectPattern, "Disambiguation question \"" + QuestionText.Replace('\r',' ').Replace('\n', ' ').Trim() + "\" without any entity match => dead end");
             }
             else
             {
@@ -291,7 +291,7 @@ namespace dialogtool
             DisambiguationOptions = new List<DisambiguationOption>();
             if (disambiguationOptionsText == null || disambiguationOptionsText.Count == 0)
             {
-                dialog.LogMessage(LineNumber, MessageType.IncorrectPattern, "Disambiguation question \"" + QuestionText + "\" doesn't provide options to guide the user");
+                dialog.LogMessage(LineNumber, MessageType.IncorrectPattern, "Disambiguation question \"" + QuestionText.Replace('\r', ' ').Replace('\n', ' ').Trim() + "\" doesn't provide options to guide the user");
             }
             else if(entityMatch != null)
              {
@@ -300,7 +300,7 @@ namespace dialogtool
                     var entityValuesMatchResult = dialog.MatchEntityValueInOptionText(this, entityMatch.Entity, optionText);
                     if (entityValuesMatchResult.EntityValues.Count == 0)
                     {
-                        string message = "Option \"" + optionText + "\" for question \"" + QuestionText.Trim(' ', '\r', '\n') + "\" can't be matched with any entity value for entity " + entityMatch.Entity.Name;
+                        string message = "Option \"" + optionText + "\" for question \"" + QuestionText.Replace('\r', ' ').Replace('\n', ' ').Trim() + "\" can't be matched with any entity value for entity " + entityMatch.Entity.Name;
                         if (entityValuesMatchResult.ConceptSubstitutions != null)
                         {
                             foreach (var conceptSubstitution in entityValuesMatchResult.ConceptSubstitutions)

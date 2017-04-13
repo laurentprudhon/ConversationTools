@@ -33,6 +33,7 @@ namespace dialogtool
         // Savings configuration
         
         private static string Savings_RedirectToLongTailVariable = "REDIRECT_LONG_TAIL";
+        private static string[] Savings_FederationNotSupportedVariables = { "NON_FED_PRODUCT", "NON_FED_SUPPORT" };
 
         private static string[][] Savings_DeduceVariableValues = {
             new string[] { "CLASSIFIER_CLASS_0", "Housing_", "SubDomain_Var", "housing" },
@@ -181,8 +182,10 @@ namespace dialogtool
             return compactResult.ToArray();
         }
 
-        public static string ComputeMappingURI(IDictionary<string, string> variablesValues, MappingUriConfig mappingUriConfig, out bool redirectToLongTail)
+        public static string ComputeMappingURI(IDictionary<string, string> variablesValues, MappingUriConfig mappingUriConfig, out bool redirectToLongTail, out bool directAnswserValueNotSupportedInFederation)
         {
+            directAnswserValueNotSupportedInFederation = false;
+         
             // Redirect to long tail ?
             var redirectToLongTailVariableName = mappingUriConfig == MappingUriConfig.Insurance ? Insurance_RedirectToLongTailVariable : Savings_RedirectToLongTailVariable;
             string redirectToLongTailValue = null;
@@ -191,6 +194,21 @@ namespace dialogtool
             if (redirectToLongTail)
             {
                 return null;
+            }
+
+            // Display federation error message ?
+            if(mappingUriConfig == MappingUriConfig.Savings)
+            {
+                foreach (var varName in Savings_FederationNotSupportedVariables)
+                {
+                    string directAnswserValueNotSupported = null;
+                    variablesValues.TryGetValue(varName, out directAnswserValueNotSupported);
+                    directAnswserValueNotSupportedInFederation = directAnswserValueNotSupported == "yes";
+                    if(directAnswserValueNotSupportedInFederation)
+                    {
+                        return null;
+                    }
+                }
             }
 
             // Deduce subdomain from entity name
