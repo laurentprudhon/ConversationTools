@@ -399,7 +399,7 @@ namespace dialogtool
             Console.WriteLine("Reading " + annotatedQuestionsFileInfo.Name + " ... ");
             int questionCount = 0;
             IList<string> impacts = new List<string>();
-            impacts.Add("id;question;intent;new result;oldresult;new result trace;old result trace");
+            impacts.Add("id;question;intent;diff;new result;old result;new trace;old trace");
             using (StreamReader sr = new StreamReader(annotatedQuestionsFileInfo.FullName, Encoding.GetEncoding("iso8859-1")))
             {
                 string line = null;
@@ -419,7 +419,28 @@ namespace dialogtool
                     // Compare results
                     if (!newResult.ReturnsSameResultAs(oldResult))
                     {
-                        impacts.Add(newResult.QuestionId + ";" + newResult.QuestionText + ";" + newResult.IntentName + ";" + newResult.ResultString + ";" + oldResult.ResultString + ";" + newResult.ToString() + ";" + oldResult.ToString());
+                        var newType = newResult.ExecutionResult != null ? newResult.ExecutionResult.DialogNode.Type.ToString() : "[no result]";
+                        var oldType = oldResult.ExecutionResult != null ? oldResult.ExecutionResult.DialogNode.Type.ToString() : "[no result]";
+                        string diff = null;
+                        if(newType != oldType)
+                        {
+                            diff = oldType + " => " + newType;
+                        }
+                        else
+                        {
+                            if(newType == "FatHeadAnswers")
+                            {
+                                var newURI = ((FatHeadAnswerNodeExecution)newResult.ExecutionResult).MappingURI;
+                                var oldURI = ((FatHeadAnswerNodeExecution)oldResult.ExecutionResult).MappingURI;
+                                diff = "FH: " + FatHeadAnswerNodeExecution.CompareMappingURIs(newURI, oldURI);
+                            }
+                            else
+                            {
+                                diff = oldType + " changed";
+                            }
+                        }
+
+                        impacts.Add(newResult.QuestionId + ";" + newResult.QuestionText + ";" + newResult.IntentName + ";" + diff + ";" + newResult.ResultString + ";" + oldResult.ResultString + ";" + newResult.ToString() + ";" + oldResult.ToString());
                     }
 
                     questionCount++;

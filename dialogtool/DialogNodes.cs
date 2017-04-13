@@ -434,25 +434,35 @@ namespace dialogtool
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder("FatHeadAnswers");
-            if (MappingUris != null && MappingUris.Length > 0)
+            switch (Type)
             {
-                sb.Append(':');
-                bool isFirst = true;
-                foreach(string mappingUri in MappingUris)
-                {
-                    if(isFirst)
+                case DialogNodeType.FatHeadAnswers:
+                    StringBuilder sb = new StringBuilder("FatHeadAnswers");
+                    if (MappingUris != null && MappingUris.Length > 0)
                     {
-                        isFirst = false;
+                        sb.Append(':');
+                        bool isFirst = true;
+                        foreach (string mappingUri in MappingUris)
+                        {
+                            if (isFirst)
+                            {
+                                isFirst = false;
+                            }
+                            else
+                            {
+                                sb.Append("|");
+                            }
+                            sb.Append(mappingUri);
+                        }
                     }
-                    else
-                    {
-                        sb.Append("|");
-                    }
-                    sb.Append(mappingUri);
-                }
+                    return sb.ToString();
+                case DialogNodeType.RedirectToLongTail:
+                    return "RedirectToLongTail";
+                case DialogNodeType.DirectAnswer:
+                    return "DirectAnswer:" + MessageText;
+                default:
+                    return null;
             }
-            return sb.ToString();
         }
     }
 

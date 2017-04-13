@@ -299,16 +299,16 @@ namespace dialogtool
             DialogNodesExecutionPath.Add(dialogNodeExecution);
         }
 
-        public DialogNodeExecution ResultNode
+        public DialogNodeExecution ExecutionResult
         {
             get { return DialogNodesExecutionPath.Count > 0 ? DialogNodesExecutionPath[DialogNodesExecutionPath.Count - 1] : null;  }
         }
         public string ResultString
         {
             get {
-                if (ResultNode != null)
+                if (ExecutionResult != null)
                 {
-                    return ResultNode.ToString();
+                    return ExecutionResult.ToString();
                 }
                 else
                 {
@@ -426,6 +426,47 @@ namespace dialogtool
         public override string ToString()
         {
             return "FatHeadAnswer:" + MappingURI;
+        }
+
+        internal static string CompareMappingURIs(string newURI, string oldURI)
+        {
+            var newValues = SplitMappingURI(newURI);
+            var oldValues = SplitMappingURI(oldURI);
+
+            StringBuilder diff = new StringBuilder();
+            foreach (var newKey in newValues.Keys)
+            {
+                if(!oldValues.ContainsKey(newKey))
+                {
+                    diff.Append("added " + newKey + "=" + newValues[newKey]+ " ");
+                }
+                else if(oldValues[newKey] != newValues[newKey])
+                {
+                    diff.Append("changed " + newKey + " : " + oldValues[newKey] + " => " + newValues[newKey] + " ");
+                }
+            }
+            foreach (var oldKey in oldValues.Keys)
+            {
+                if (!newValues.ContainsKey(oldKey))
+                {
+                    diff.Append("removed " + oldKey + " ");
+                }
+            }
+            return diff.ToString();
+        }
+
+        private static IDictionary<string, string> SplitMappingURI(string uri)
+        {
+            var result = new Dictionary<string, string>();
+            if(!String.IsNullOrEmpty(uri))
+            {
+                var segments = uri.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                for(int i = 0; i < segments.Length ; i += 2)
+                {
+                    result.Add(segments[i], segments[i + 1]);
+                }
+            }
+            return result;
         }
     }
 }
