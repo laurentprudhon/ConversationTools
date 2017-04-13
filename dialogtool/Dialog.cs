@@ -291,14 +291,14 @@ namespace dialogtool
             ConceptsRegex = new Regex(regexBuilder.ToString(), RegexOptions.IgnoreCase);
         }
 
-        internal void LinkEntityValueToConcept(EntityValue entityValue, string conceptId)
+        internal void LinkEntityValueToConcept(EntityValue entityValue, IList<string> conceptIds)
         {
-            if (conceptId != null)
+            foreach(var conceptId in conceptIds)
             {
                 if (Concepts.ContainsKey(conceptId))
                 {
                     var concept = Concepts[conceptId];
-                    entityValue.Concept = concept;
+                    entityValue.AddConcept(concept);
                     concept.AddEntityValueReference(entityValue);
                 }
                 else
@@ -306,11 +306,14 @@ namespace dialogtool
                     LogMessage(entityValue.LineNumber, MessageType.InvalidReference, "Entity value " + entityValue.Entity.Name + " > \"" + entityValue.Name + "\" => invalid concept reference : " + conceptId + " (a conflicting concept with the same canonical value but a different id may have been defined before)");
                 }
             }
-            else if (Concepts.ContainsKey(entityValue.CanonicalValue))
+            if (Concepts.ContainsKey(entityValue.CanonicalValue))
             {
                 var concept = Concepts[entityValue.CanonicalValue];
-                entityValue.Concept = concept;
-                concept.AddEntityValueReference(entityValue);
+                if (entityValue.Concepts == null || !entityValue.Concepts.Contains(concept))
+                {
+                    entityValue.AddConcept(concept);
+                    concept.AddEntityValueReference(entityValue);
+                }
             }
         }
 

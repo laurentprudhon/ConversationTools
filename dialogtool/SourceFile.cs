@@ -343,9 +343,23 @@ namespace dialogtool
                 {
                     xw.WriteStartElement("EntityValue");
                     xw.WriteAttributeString("Name", entityValue.Name);
-                    if(entityValue.Concept != null)
+                    if(entityValue.Concepts != null)
                     {
-                        xw.WriteAttributeString("ConceptId", entityValue.Concept.Id);
+                        StringBuilder sb = new StringBuilder();
+                        bool isFirst = true;
+                        foreach (var concept in entityValue.Concepts)
+                        {
+                            if(isFirst)
+                            {
+                                isFirst = false;
+                            }
+                            else
+                            {
+                                sb.Append(',');
+                            }
+                            sb.Append(concept.Key);
+                        }
+                        xw.WriteAttributeString("ConceptReferences", sb.ToString());
                     }
                     if(entityValue.AllowedInFederationGroups != null)
                     {

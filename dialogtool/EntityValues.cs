@@ -58,25 +58,28 @@ namespace dialogtool
                     var otherEntityValue = EntityValuesDictionary[entityValue.CanonicalValue];
                     errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Entity " + Name + " - two entity values declared with the same value \""+ entityValue.CanonicalValue + "\" : line " + entityValue.LineNumber + " " + entityValue.Name + ", and line " + otherEntityValue.LineNumber + " " + otherEntityValue.Name);
                 }
-                if(entityValue.Concept != null)
+                if(entityValue.Concepts != null)
                 {
-                    var conceptCanonicalValue = entityValue.Concept.CanonicalValue;                    
-                    if (!EntityValueFromConceptDictionary.ContainsKey(conceptCanonicalValue))
+                    foreach (var concept in entityValue.Concepts)
                     {
-                        EntityValueFromConceptDictionary.Add(conceptCanonicalValue, entityValue);
-                    }
-                    foreach (var synonym in entityValue.Concept.Synonyms)
-                    {
-                        if (!EntityValueSynonymsDictionary.ContainsKey(synonym))
+                        var conceptCanonicalValue = concept.CanonicalValue;
+                        if (!EntityValueFromConceptDictionary.ContainsKey(conceptCanonicalValue))
                         {
-                            EntityValueSynonymsDictionary.Add(synonym, entityValue);
+                            EntityValueFromConceptDictionary.Add(conceptCanonicalValue, entityValue);
                         }
-                        else
+                        foreach (var synonym in concept.Synonyms)
                         {
-                            var conflictingEntityValue = EntityValueSynonymsDictionary[synonym];
-                            if (entityValue.Name != conflictingEntityValue.Name)
+                            if (!EntityValueSynonymsDictionary.ContainsKey(synonym))
                             {
-                                errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Entity " + Name + " : concept synonym \"" + synonym + "\" defined for entity value \"" + entityValue.Name + "\" is conflicting with an identical concept synonym previoulsy defined for another entity value of the same entity : \"" + conflictingEntityValue.Name + "\" on line " + conflictingEntityValue.LineNumber);
+                                EntityValueSynonymsDictionary.Add(synonym, entityValue);
+                            }
+                            else
+                            {
+                                var conflictingEntityValue = EntityValueSynonymsDictionary[synonym];
+                                if (entityValue.Name != conflictingEntityValue.Name)
+                                {
+                                    errors.LogMessage(entityValue.LineNumber, MessageType.DuplicateKey, "Entity " + Name + " : concept synonym \"" + synonym + "\" defined for entity value \"" + entityValue.Name + "\" is conflicting with an identical concept synonym previoulsy defined for another entity value of the same entity : \"" + conflictingEntityValue.Name + "\" on line " + conflictingEntityValue.LineNumber);
+                                }
                             }
                         }
                     }
@@ -98,10 +101,13 @@ namespace dialogtool
                     regexBuilder.Append("|");
                 }
                 regexBuilder.Append(Regex.Escape(entityValue.CanonicalValue));
-                if(entityValue.Concept != null)
+                if(entityValue.Concepts != null)
                 {
-                    regexBuilder.Append("|");
-                    regexBuilder.Append(Regex.Escape(entityValue.Concept.CanonicalValue));
+                    foreach (var concept in entityValue.Concepts)
+                    {
+                        regexBuilder.Append("|");
+                        regexBuilder.Append(Regex.Escape(concept.CanonicalValue));
+                    }
                 }
             }
             regexBuilder.Append(")\\b");
@@ -303,7 +309,12 @@ namespace dialogtool
         public string Name { get; private set; }
         public string CanonicalValue { get; private set; }
 
-        public Concept Concept { get; set; }
+        public IList<Concept> Concepts { get; set; }
+        internal void AddConcept(Concept concept)
+        {
+            if (Concepts == null) Concepts = new List<Concept>();
+            Concepts.Add(concept);
+        }
 
         public IList<string> AllowedInFederationGroups { get; private set; }
         internal void AddFederationGroup(string federationGroup)

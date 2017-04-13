@@ -293,13 +293,15 @@ namespace dialogtool
                     entityValue.LineNumber = ((IXmlLineInfo)valueNode).LineNumber;
                     entity.AddEntityValue(entityValue, dialog);
 
-                    string conceptId = null;
+                    IList<string> conceptIds = new List<string>();
                     if (valueNode.Descendants("concept").Any())
                     {
-                        var conceptNode = valueNode.Descendants("concept").First();
-                        conceptId = conceptNode.Attribute("ref").Value;
+                        foreach (var conceptNode in valueNode.Descendants("concept"))
+                        {
+                            conceptIds.Add(conceptNode.Attribute("ref").Value);
+                        }
                     }
-                    dialog.LinkEntityValueToConcept(entityValue, conceptId);                    
+                    dialog.LinkEntityValueToConcept(entityValue, conceptIds);                    
                 }
                 dialog.AddEntity(entity);
             }
