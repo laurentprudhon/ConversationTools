@@ -329,17 +329,20 @@ namespace dialogtool
         {
             var txt = "DisambiguationQuestion:";
             bool isFirst = true;
-            foreach (var option in DisambiguationOptions)
+            if (DisambiguationOptions != null)
             {
-                if (isFirst)
+                foreach (var option in DisambiguationOptions)
                 {
-                    isFirst = false;
+                    if (isFirst)
+                    {
+                        isFirst = false;
+                    }
+                    else
+                    {
+                        txt += " or ";
+                    }
+                    txt += option.EntityValue.Entity.Name + "='" + option.EntityValue.Name + "'";
                 }
-                else
-                {
-                    txt += " or ";
-                }
-                txt += option.EntityValue.Entity.Name + "='" + option.EntityValue.Name + "'";                
             }
             return txt;
         }

@@ -119,7 +119,7 @@ namespace dialogtool
 
             if (arraysOfAllowedValues.Keys.Count > 0)
             {
-                var federationGroupsNodes = startOfDialogNode.Descendants("if").Where(ifNode => ifNode.Element("cond") != null && ifNode.Element("cond").Attribute("varName").Value == "federationGroup" && ifNode.Element("cond").Attribute("operator").Value == "EQUALS");
+                var federationGroupsNodes = startOfDialogNode.Descendants("if").Where(ifNode => ifNode.Element("cond") != null && ifNode.Element("cond").Attribute("varName").Value == "federationGroup" && ifNode.Element("cond").Attribute("operator").Value == "EQUALS" && ifNode.Descendants("action").Any());
                 dialog.ArraysOfAllowedValuesByEntityNameAndFederation = new Dictionary<string, IDictionary<string, IList<string>>>();
                 foreach (var entityName in arraysOfAllowedValues.Keys)
                 {

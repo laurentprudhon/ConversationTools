@@ -122,18 +122,10 @@ namespace dialogtool
                                 ExecuteConditionalNode(dialog, variablesValues, childNode, result);
                                 return;
                             }
-                            else if (!String.IsNullOrEmpty(switchNode.EntityMatch.EntityVariableName2))
-                            {
-                                if (variablesValues.TryGetValue(switchNode.EntityMatch.EntityVariableName2, out varValue))
-                                {
-                                    if (!String.IsNullOrEmpty(varValue))
-                                    {
-                                        ExecuteConditionalNode(dialog, variablesValues, childNode, result);
-                                        return;
-                                    }
-                                }
-                            }
                         }
+                        break;
+                    case DialogNodeType.SwitchLoopOnce:
+                        -- here --
                         break;
                     case DialogNodeType.DialogVariableConditions:
                         var conditionsNode = (DialogVariableConditions)childNode;
