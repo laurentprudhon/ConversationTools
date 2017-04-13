@@ -364,9 +364,12 @@ namespace dialogtool
             intent.Questions = intentQuestions;
 
             // Analyze entity matches
+            bool isFirstChild = true;
+            XElement switchSecondIfElement = null;
+            DialogNode inlineSwitchDialogNode = null;
             foreach (var inputChildElement in intentInput.Elements("input").Where(elt => elt.Attribute("isOffline") == null))
             {
-                var entityMatch = AnalyzeEntityMatch(intent, inputChildElement);
+                var entityMatch = AnalyzeEntityMatch(intent, inputChildElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode, ref switchSecondIfElement);
                 if (entityMatch != null)
                 {
                     intent.AddEntityMatch(entityMatch);
@@ -381,9 +384,6 @@ namespace dialogtool
             dialog.AddIntent(intent, dialogVariables);
 
             // Match entities and check their value
-            bool isFirstChild = true;
-            XElement switchSecondIfElement = null;
-            DialogNode inlineSwitchDialogNode = null;
             foreach (var inputChildElement in intentInput.Elements().Where(elt => elt.Attribute("isOffline") == null))
             {
                 if (inputChildElement == switchSecondIfElement)
@@ -431,7 +431,7 @@ namespace dialogtool
             parentNode.ChildrenNodes.Add(switchLoopOnce);
         }
 
-        private EntityMatch AnalyzeEntityMatch(DialogNode dialogNode, XElement inputElement)
+        private EntityMatch AnalyzeEntityMatch(DialogNode dialogNode, XElement inputElement, DialogVariablesSimulator dialogVariables, bool isFirstElement, ref DialogNode inlineSwitchDialogNode, ref XElement switchSecondIfElement)
         {
             // Extract element names
             string entityName = null;
@@ -519,18 +519,26 @@ namespace dialogtool
                 variableName1 = variableName2;
                 variableName2 = null;
             }
-
-            // Check unexpected children nodes inside entity match pattern
-            if(inputElement.Element("if") != null)
-            {
-                // TO DO : need to support this
-                var unexpectedChildElement = inputElement.Element("if");
-                dialog.LogMessage(((IXmlLineInfo)unexpectedChildElement).LineNumber, MessageType.IncorrectPattern, "Unsupported if child element inside an entity match pattern : you should move this element outside of the input node");
-            }
-
+            
             var entityMatch = new EntityMatch(entityName, variableName1, variableName2);
             entityMatch.LineNumber = ((IXmlLineInfo)inputElement).LineNumber;            
             dialog.LinkEntityMatchToEntityAndDialogVariables(dialogNode, entityMatch);
+
+            // Handle if children nodes inside entity match pattern
+            if (inputElement.Element("if") != null)
+            {
+                var listOfArtificialConditions = new List<DialogVariableCondition>();
+                var artificialCondition = new DialogVariableCondition(variableName1, ConditionComparison.HasValue, null);
+                listOfArtificialConditions.Add(artificialCondition);
+                var artificialIfRootNode = new DialogVariableConditions(dialogNode, listOfArtificialConditions, ConditionOperator.Or);
+                artificialIfRootNode.LineNumber = ((IXmlLineInfo)inputElement.Element("if")).LineNumber;
+
+                foreach (var ifElement in inputElement.Elements("if"))
+                {
+                    AnalyzeDialogVariableConditions(artificialIfRootNode, ifElement, dialogVariables, isFirstElement, ref inlineSwitchDialogNode, ref switchSecondIfElement);
+                }
+                dialogNode.ChildrenNodes.Add(artificialIfRootNode);
+            }
 
             return entityMatch;
         }
@@ -702,19 +710,18 @@ namespace dialogtool
             }
 
             // Analyze entity match and disambiguation options
+            bool isFirstChild = true;
+            XElement switchSecondIfElement = null;
+            DialogNode inlineSwitchDialogNode = null;
             EntityMatch entityMatch = null;
             var inputElement = getUserInput.Element("input");
             if (inputElement != null)
             {
-                entityMatch = AnalyzeEntityMatch(disambiguationQuestion, inputElement);
+                entityMatch = AnalyzeEntityMatch(disambiguationQuestion, inputElement, dialogVariables, isFirstChild, ref inlineSwitchDialogNode, ref switchSecondIfElement);
                 if (entityMatch != null)
                 {
                     disambiguationQuestion.SetEntityMatchAndDisambiguationOptions(entityMatch, options, dialog);
-                }
-
-                // Sometimes : nested conditions directly inside the entity match input
-                var nestedElements = inputElement.Elements();
-                AnalyzeDisambiguationQuestionChildren(dialogVariables, disambiguationQuestion, nestedElements);
+                }               
             }
             dialogVariables.AddDisambiguationQuestion(disambiguationQuestion);
 
