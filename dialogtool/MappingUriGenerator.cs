@@ -103,6 +103,34 @@ namespace dialogtool
                 {
                     mappingUriValues[i] = federationGroups;
                 }
+                // Filter only valid entity values
+                if (mappingUriValues[i] != null)
+                {
+                    DialogVariable variable = null;
+                    if (dialogVariablesSimulator.Variables.TryGetValue(mappingUriSegments[i][1], out variable))
+                    {
+                        var entity = dialogVariablesSimulator.TryGetEntityFromVariable(variable);
+                        if (entity != null)
+                        {
+                            var valuesCount = mappingUriValues[i].Count;
+                            for (int j = 0; j < valuesCount; j++)
+                            {
+                                var entityValueName = mappingUriValues[i][j];
+                                var entityValue = entity.TryGetEntityValueFromName(entityValueName);
+                                if (entityValue == null)
+                                {
+                                    mappingUriValues[i].RemoveAt(j);
+                                    j--;
+                                    valuesCount--;
+                                }
+                            }
+                            if(valuesCount == 0)
+                            {
+                                mappingUriValues[i] = null;
+                            }
+                        }
+                    }
+                }
             }
             var indexes = new int[mappingUriSegments.Length];
             int count = 0;
