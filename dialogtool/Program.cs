@@ -256,6 +256,7 @@ namespace dialogtool
 
             Console.WriteLine("OK");
             Console.WriteLine("");
+
         }
 
         private static void GenerateDialogFile(FileInfo sourceFileInfo)
@@ -319,9 +320,23 @@ namespace dialogtool
             return dialog;
         }
 
-        private static void ViewDialogBranches(FileInfo sourceOrDialogFileInfo)
+        private static void ViewDialogBranches(FileInfo dialogFileInfo)
         {
-            Console.WriteLine("dialogtool command \"view\" not yet implemented");
+            Console.WriteLine("Generate view file :");
+            Console.WriteLine();
+
+            // Load dialog file
+            string sourceOrDialogFileName;
+            Dialog dialog = LoadDialogFile(dialogFileInfo, out sourceOrDialogFileName);
+
+            // Write view file
+            var sourceFilePath = @"view\" + sourceOrDialogFileName;
+            Console.Write("Writing " + sourceFilePath + " ... ");
+
+            ViewFile.Write(dialog, @"View\" + sourceOrDialogFileName);
+
+            Console.WriteLine("OK");
+            Console.WriteLine("");
         }
 
         private static void GenerateAnswersMappingURIs(FileInfo sourceOrDialogFileInfo)
