@@ -1,14 +1,23 @@
 ﻿using System.IO;
 using System.Xml;
+using System.Collections.Generic;
 
 namespace dialogtool
 {
     public static class ViewFile
     {
+        //private static List<string> Colors = new List<string>(new string[] { "darkorange", "red", "blue", "darkorchid", "green", "olive" });
+        private static List<string> Colors = new List<string>(new string[] { "darkorchid", "blue", "green", "olive", "darkorange", "red"});
+        //Entity = key
+        //Color = value
+        private static Dictionary<string, string> EntityColor = new Dictionary<string, string>();
+
         public static void Write(Dialog dialog, string sourceFilePath)
         {
 
             ViewGenerator viewGenerator = new ViewGenerator(dialog);
+            
+            GetColorCode(dialog);
 
             var settings = new XmlWriterSettings();
             settings.Indent = true;
@@ -21,20 +30,32 @@ namespace dialogtool
 
                 foreach (var intent in viewGenerator.Intents)
                 {
-                    xw.WriteElementString("h1", intent.Name);
+                    //Sample of questions associated with the current intent
+                    string questions = "";
+                    for(int i = 0; i<5; i++)
+                    {
+                        questions += "-" + intent.Questions[i] + "\r\n";
+                    }
 
-                    if (intent.ViewNodes.Count > 0) WriteColorCode(xw);
+                    xw.WriteStartElement("h1");
+                    xw.WriteAttributeString("title", questions);
+                    xw.WriteString(intent.Name);
+                    xw.WriteEndElement(); // h1           
+
+                    WriteColorCode(xw);
 
                     xw.WriteStartElement("table");
 
-                    xw.WriteAttributeString("border", "2");
+                    //table visual options
+                    xw.WriteAttributeString("border", "3");
                     xw.WriteAttributeString("width", "80%");
                     xw.WriteAttributeString("cellpadding", "5");
-                    xw.WriteAttributeString("cellspacing", "5");
+                    xw.WriteAttributeString("cellspacing", "5"); 
+                    xw.WriteAttributeString("bgcolor", "#E6E6E6");
 
                     foreach (var condition in intent.ViewNodes)
                     {
-                        ReadRoot(condition, xw);
+                        WriteRoot(condition, xw);
                     }
 
                     xw.WriteEndElement(); // table
@@ -45,76 +66,31 @@ namespace dialogtool
 
         }
 
-        public static void WriteColorCode(XmlWriter xw)
-        {
-            xw.WriteStartElement("p");
-            xw.WriteStartElement("font");
-
-            xw.WriteAttributeString("color", "green");
-            xw.WriteString("Person  |  ");
-
-            xw.WriteEndElement(); // font
-
-            xw.WriteStartElement("font");
-
-            xw.WriteAttributeString("color", "red");
-            xw.WriteString("Object  |  ");
-
-            xw.WriteEndElement(); // font
-
-            xw.WriteStartElement("font");
-
-            xw.WriteAttributeString("color", "blue");
-            xw.WriteString("Event  |  ");
-
-            xw.WriteEndElement(); // font
-
-            xw.WriteStartElement("font");
-
-            xw.WriteAttributeString("color", "Magenta");
-            xw.WriteString("Product  |  ");
-
-            xw.WriteEndElement(); // font
-
-            xw.WriteStartElement("font");
-
-            xw.WriteAttributeString("color", "purple");
-            xw.WriteString("Guarantee  |  ");
-
-            xw.WriteEndElement(); // font
-
-            xw.WriteStartElement("font");
-
-            xw.WriteAttributeString("color", "olive");
-            xw.WriteString("SubDomain");
-
-            xw.WriteEndElement(); // font
-            xw.WriteEndElement(); // p
-
-        }
-
-        public static void ReadRoot(ViewNode condition, XmlWriter xw)
+        //Write the root of the current ViewNode data-tree
+        private static void WriteRoot(ViewNode condition, XmlWriter xw)
         {
             xw.WriteStartElement("tr");
-            ReadNode(condition, xw);
+            WriteNode(condition, xw);
             xw.WriteEndElement();
         }
 
-        public static void ReadNode(ViewNode condition, XmlWriter xw)
+        //Recursively write the nodes of the current ViewNode data-tree 
+        private static void WriteNode(ViewNode condition, XmlWriter xw)
         {
+            //We don't write the root node, or any empty cell
             if (condition.DisplayValues[0].Value != "root" && condition.DisplayValues[0].Value != "")
             {
                 xw.WriteStartElement("td");
 
                 xw.WriteAttributeString("RowSpan", GetRawSpan(condition).ToString());
+                xw.WriteAttributeString("bgcolor", "#FAFAFA");
 
-                //TODO : remonter les attributs au niveau ViewNode
                 if (condition.DisplayValues[0].Attributes.Count > 0)
                 {
                     xw.WriteAttributeString(condition.DisplayValues[0].Attributes[0].Name, condition.DisplayValues[0].Attributes[0].Value);
                 }
 
-                if (condition.DisplayValues.Count > 1)
+                if (condition.DisplayValues.Count > 0)
                 {
                     foreach (var value in condition.DisplayValues)
                     {                     
@@ -129,12 +105,18 @@ namespace dialogtool
 
                         xw.WriteAttributeString("color", GetColor(value));
 
-                        xw.WriteString(value.Value + " | ");
+                        xw.WriteString(value.Value);
+
+                        if (condition.DisplayValues.Count > 1)
+                        {
+                            xw.WriteString(" | ");
+                        }
 
                         xw.WriteEndElement(); //font
                     }
                 }
-                else
+                //if there's no child node left, it's the end of the data-tree --> 
+                /*else
                 {
                     xw.WriteStartElement("font");
 
@@ -144,20 +126,22 @@ namespace dialogtool
 
                     xw.WriteEndElement(); //font
 
-                }
+                }*/
 
                
                 xw.WriteEndElement(); //td
             }
 
+            //As long as there's a child node, we keep going
             if (condition.Children != null && condition.Children.Count > 0)
             {
                 foreach (var child in condition.Children)
                 {
-                    ReadNode(child, xw);
+                    WriteNode(child, xw);
                 }
             }
 
+            //if there's no child left, it's a leaf, we end the row </tr> and start a new one <tr>
             if (condition.Children != null || condition.Children.Count > 0)
             {
                 xw.WriteEndElement();
@@ -168,7 +152,7 @@ namespace dialogtool
         }
 
         //Get the number of leaves a node has
-        public static int GetRawSpan(ViewNode condition)
+        private static int GetRawSpan(ViewNode condition)
         {
 
             int rowspan = ( GetNextChild(condition, 0) >=1) ? GetNextChild(condition, 0) : 1;
@@ -177,7 +161,8 @@ namespace dialogtool
 
         }
 
-        public static int GetNextChild(ViewNode condition, int rowspan)
+        //used to recursively read the data-tree, summing-up the number of leaves
+        private static int GetNextChild(ViewNode condition, int rowspan)
         {
 
             rowspan = condition.Children.Count;
@@ -193,38 +178,58 @@ namespace dialogtool
             return rowspan;
         }
 
-        //Colorize text with reference to the variable
-        public static string GetColor(DisplayValue displayValue)
+        //Associate entity to a color code in the EntityColor Dictionnary
+        private static void GetColorCode(Dialog dialog)
+        {
+            int i = 0;
+            foreach (var entity in dialog.Entities)
+            {
+                EntityColor.Add(entity.Value.Name.TrimEnd("_ENTITY").ToLower(), Colors[i]);
+                i += 1;
+            }
+        }
+
+        //Write the color legend
+        private static void WriteColorCode(XmlWriter xw)
+        {
+            xw.WriteStartElement("p");
+
+            foreach (var entitycolor in EntityColor)
+            {
+                xw.WriteStartElement("font");
+                xw.WriteAttributeString("color", entitycolor.Value);
+                xw.WriteString(entitycolor.Key + " | ");
+                xw.WriteEndElement(); // font
+
+            }
+
+            xw.WriteEndElement(); // p
+        }
+
+        //Colorize text with reference to the relevant entity
+        private static string GetColor(DisplayValue displayValue)
         {
             string color;
 
-            switch (displayValue.Variable)
+            if (!EntityColor.TryGetValue(displayValue.Variable.TrimEnd("_Var").ToLower(), out color))
             {
-                case "Object_Var":
-                    color = "red";
-                    break;
-                case "Event_Var":
-                    color = "blue";
-                    break;
-                case "Person_Var":
-                    color = "green";
-                    break;
-                case "Product_Var":
-                    color = "Magenta";
-                    break;
-                case "Guarantee_Var":
-                    color = "purple";
-                    break;
-                case "SubDomain_Var":
-                    color = "olive";
-                    break;
-                default:
-                    color = "black";
-                    break;
+                color = "black";
             }
 
             return color;
 
+        }
+
+        //TrimEnd() overload using a string instead of a char[]
+        private static string TrimEnd(this string input, string suffixToRemove)
+        {
+
+            if (input != null && suffixToRemove != null
+              && input.EndsWith(suffixToRemove))
+            {
+                return input.Substring(0, input.Length - suffixToRemove.Length);
+            }
+            else return input;
         }
 
     }

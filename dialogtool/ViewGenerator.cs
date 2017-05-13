@@ -16,14 +16,19 @@ namespace dialogtool
 
             public List<ViewNode> ViewNodes;
 
-            public Intent(string name, List<ViewNode> conditions)
+            public IList<string> Questions;
+
+            public Intent(string name, List<ViewNode> conditions, IList<string> questions)
             {
                 Name = name;
                 ViewNodes = conditions;
+                Questions = questions;
             }
 
         }
 
+        //The core attribute of ViewGenerator
+        //Consists of a list of Intents, each intent containing a list of data-tree ViewNode objects
         public List<Intent> Intents;
 
         public ViewGenerator(Dialog dialog)
@@ -33,21 +38,15 @@ namespace dialogtool
 
             foreach (var intent in dialog.Intents.Values.OrderBy(i => i.Name))
             {
+                Console.WriteLine(intent.Name);
                 List<ViewNode> conditions = new List<ViewNode>();
 
                 foreach (var node in intent.ChildrenNodes)
                 {
-                    //if (node.Type == DialogNodeType.SwitchOnEntityVariables || node.Type == DialogNodeType.FatHeadAnswers)
-                    //{
-                        //if (node.ChildrenNodes.Count > 0)
-                        //{
-                            conditions.Add(ReadRoot(node));
-                        //}
-                   // }
-
+                    conditions.Add(ReadRoot(node));
                 }
 
-                Intents.Add(new Intent(intent.Name, conditions));
+                Intents.Add(new Intent(intent.Name, conditions, intent.Questions));
             }
         }
 
@@ -60,12 +59,13 @@ namespace dialogtool
 
         private ViewNode ReadNode(DialogNode node, ViewNode condition)
         {
-            if (node.ChildrenNodes != null /*&& node.ChildrenNodes.Count > 0*/)
+            if (node.ChildrenNodes != null)
             {
                 foreach (var child in node.ChildrenNodes)
                 {
                     if (child.Type == DialogNodeType.DialogVariableConditions || child.Type == DialogNodeType.DisambiguationQuestion || child.Type == DialogNodeType.SwitchOnEntityVariables || child.Type == DialogNodeType.FatHeadAnswers)
                     {
+                        Console.WriteLine(condition.DisplayValues[0].Value);
                         condition.AddChild(ReadNode(child, new ViewNode(child)));
                     }
                 }

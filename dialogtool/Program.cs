@@ -136,6 +136,7 @@ namespace dialogtool
                 CreateDialogToolDirectory("input");
                 CreateDialogToolDirectory("result");
                 CreateDialogToolDirectory("source");
+                CreateDialogToolDirectory("view");
 
                 var relativeFilePath1 = args[1];
                 FileInfo fileInfo1 = null;
@@ -333,7 +334,7 @@ namespace dialogtool
             var sourceFilePath = @"view\" + sourceOrDialogFileName;
             Console.Write("Writing " + sourceFilePath + " ... ");
 
-            ViewFile.Write(dialog, @"View\" + sourceOrDialogFileName);
+            ViewFile.Write(dialog, @"view\" + sourceOrDialogFileName);
 
             Console.WriteLine("OK");
             Console.WriteLine("");
