@@ -52,7 +52,8 @@ namespace fasttext
             //var result = ExecutableLauncher.ExecuteCommand(EXECUTABLE_PATH, "test model_savings.bin savings.valid", Path.GetFullPath(WORKING_DIR));
 
             // fasttext.exe supervised -input savings.train -output model_savings -epoch 20 -lr 1 -wordNgrams 2 -ws 10 -dim 300 -pretrainedVectors wiki.fr.vec
-            // fasttext.exe quantize model_savings.bin
+            // fasttext.exe quantize -output model_savings1 -input savings.train -qnorm -retrain -epoch 1
+            // fasttext.exe test model_savings1.ftz SAV_NLC_100520171.valid
 
             string trainingFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\insurance.train";
             ISet<string> intentsSet = new HashSet<string>();
