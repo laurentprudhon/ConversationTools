@@ -45,21 +45,44 @@ namespace fasttext
     class FasttextLauncher
     {
         private static string EXECUTABLE_PATH = @"..\..\facebookresearch\fasttext.exe";
-        private static string WORKING_DIR = @".\fasttext";
+        private static string WORKING_DIR = @"..\..\..\dialogtool\bin\Debug\fasttext";
     
         static void Main(string[] args)
         {
-            //var result = ExecutableLauncher.ExecuteCommand(EXECUTABLE_PATH, "test model_savings.bin savings.valid", Path.GetFullPath(WORKING_DIR));
+            string pretrainingFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\wiki.fr";
+            int lineCount = 0;
+            int lineMax = 400000;
+            using (StreamReader sr = new StreamReader(pretrainingFilePath + ".vec", Encoding.UTF8))
+            {
+                using (StreamWriter sw = new StreamWriter(pretrainingFilePath + "."+lineMax+".vec", false, Encoding.GetEncoding("iso8859-1")))
+                {
+                    string line = null;
+                    sr.ReadLine();
+                    sw.WriteLine(lineMax + " " + 300);
+                    while((line = sr.ReadLine()) != null)
+                    {
+                        sw.WriteLine(line);
+                        lineCount++;
+                        if (lineCount >= lineMax) break;
+                    }
+                }
+            }
+            return;
+            
+                //var result = ExecutableLauncher.ExecuteCommand(EXECUTABLE_PATH, "test model_savings.bin savings.valid", Path.GetFullPath(WORKING_DIR));
 
-            // fasttext.exe supervised -input savings.train -output model_savings -epoch 20 -lr 1 -wordNgrams 2 -ws 10 -dim 300 -pretrainedVectors wiki.fr.vec
-            // fasttext.exe quantize -output model_savings1 -input savings.train -qnorm -retrain -epoch 1
-            // fasttext.exe test model_savings1.ftz SAV_NLC_100520171.valid
+                // fasttext.exe supervised -input savings.train -output model_savings -epoch 20 -lr 1 -wordNgrams 2 -ws 10 -dim 300 -pretrainedVectors wiki.fr.vec
+                // fasttext.exe quantize -output model_savings1 -input savings.train -qnorm -retrain -epoch 1
+                // fasttext.exe test model_savings1.ftz SAV_NLC_100520171.valid
 
-            string trainingFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\insurance.train";
+                var DATASET_NAME = "SAV_NLC_100520171";
+            var MODEL_NAME = "model_savings1";
+
+            string trainingFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\"+DATASET_NAME+".train";
             ISet<string> intentsSet = new HashSet<string>();
             var intentsCountTraining = new Dictionary<string, int>();
             var trainingSamples = new Dictionary<string, IList<string>>();
-            using (StreamReader sr = new StreamReader(trainingFilePath))
+            using (StreamReader sr = new StreamReader(trainingFilePath, Encoding.UTF8))
             {
                 string line = null;
                 while ((line = sr.ReadLine()) != null)
@@ -85,10 +108,10 @@ namespace fasttext
                 }
             }
 
-            string validationFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\insurance.valid";
+            string validationFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\"+DATASET_NAME+".valid";
             IDictionary<string, string> annotatedQuestions = new Dictionary<string, string>();
             var intentsCountValidation = new Dictionary<string, int>();
-            using (StreamReader sr = new StreamReader(validationFilePath))
+            using (StreamReader sr = new StreamReader(validationFilePath, Encoding.UTF8))
             {
                 string line = null;
                 while((line = sr.ReadLine()) != null)
@@ -126,7 +149,7 @@ namespace fasttext
             int[,] confusionMatrix = new int[intents.Count, intents.Count];
             var predictionResults = new List<PredictionResult>();
 
-            var process = ExecutableLauncher.LaunchCommand(EXECUTABLE_PATH, "predict-prob model_insurance.bin - 2", Path.GetFullPath(WORKING_DIR));
+            var process = ExecutableLauncher.LaunchCommand(EXECUTABLE_PATH, "predict-prob "+MODEL_NAME+".ftz - 2", Path.GetFullPath(WORKING_DIR));
             foreach(var question in annotatedQuestions.Keys)
             {
                 var annotatedIntent = annotatedQuestions[question];
@@ -232,7 +255,7 @@ namespace fasttext
             }
 
             
-            using (StreamWriter sw = new StreamWriter(@"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\insurance.results.csv", false, Encoding.GetEncoding("iso8859-1")))
+            using (StreamWriter sw = new StreamWriter(@"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\"+MODEL_NAME+".results.csv", false, Encoding.GetEncoding("iso8859-1")))
             {
                 sw.WriteLine("1. Intents performance");
                 sw.WriteLine();

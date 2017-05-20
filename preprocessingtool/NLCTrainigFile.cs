@@ -38,15 +38,16 @@ namespace preprocessingtool
                 Console.WriteLine("Reading file : " + csvFilePath + " ...");
                 int lineCount = 0;
                 var questions = new List<LabelAndQuestion>();
-                using (StreamReader sr = new StreamReader(csvFilePath, Encoding.GetEncoding("iso8859-1")))
+                using (StreamReader sr = new StreamReader(csvFilePath, Encoding.UTF8))
                 {
                     string line = null;
                     while ((line = sr.ReadLine()) != null)
                     {
-                        string[] columns = line.Split(',');
+                        int intentIndex = line.LastIndexOf(',');
+                        if (intentIndex < 0) throw new Exception("invalid file format");
                         var labelAndQuestion = new LabelAndQuestion();
-                        labelAndQuestion.Question = columns[0];
-                        labelAndQuestion.Label = columns[1];
+                        labelAndQuestion.Question = line.Substring(0, intentIndex);
+                        labelAndQuestion.Label = line.Substring(intentIndex+1);
                         questions.Add(labelAndQuestion);
                     }
                 }
@@ -60,6 +61,11 @@ namespace preprocessingtool
                 {
                     string trainingFilePath = csvFileDirectory + Path.DirectorySeparatorChar + csvFileName + trainingSetNumber + ".train";
                     string validationFilePath = csvFileDirectory + Path.DirectorySeparatorChar + csvFileName + trainingSetNumber + ".valid";
+                    if(splitTrainingSets == 1)
+                    {
+                        trainingFilePath = csvFileDirectory + Path.DirectorySeparatorChar + csvFileName + ".delete";
+                        validationFilePath = csvFileDirectory + Path.DirectorySeparatorChar + csvFileName + ".train";
+                    }
                     using (StreamWriter trainsw = new StreamWriter(trainingFilePath, false, Encoding.UTF8))
                     {
                         using (StreamWriter validsw = new StreamWriter(validationFilePath, false, Encoding.UTF8))
