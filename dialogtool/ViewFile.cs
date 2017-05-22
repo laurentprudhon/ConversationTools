@@ -7,7 +7,7 @@ namespace dialogtool
     public static class ViewFile
     {
         //private static List<string> Colors = new List<string>(new string[] { "darkorange", "red", "blue", "darkorchid", "green", "olive" });
-        private static List<string> Colors = new List<string>(new string[] { "darkorchid", "blue", "green", "olive", "darkorange", "red"});
+        private static List<string> Colors = new List<string>(new string[] { "darkorchid", "blue", "green", "olive", "darkorange", "red", "pink"});
         //Entity = key
         //Color = value
         private static Dictionary<string, string> EntityColor = new Dictionary<string, string>();
@@ -32,7 +32,8 @@ namespace dialogtool
                 {
                     //Sample of questions associated with the current intent
                     string questions = "";
-                    for(int i = 0; i<5; i++)
+
+                    for (int i = 0; i < 5 && i < intent.Questions.Count; i++)
                     {
                         questions += "-" + intent.Questions[i] + "\r\n";
                     }
@@ -41,6 +42,8 @@ namespace dialogtool
                     xw.WriteAttributeString("title", questions);
                     xw.WriteString(intent.Name);
                     xw.WriteEndElement(); // h1           
+
+                    //System.Console.WriteLine(intent.Name);
 
                     WriteColorCode(xw);
 
@@ -213,7 +216,10 @@ namespace dialogtool
 
             if (!EntityColor.TryGetValue(displayValue.Variable.TrimEnd("_Var").ToLower(), out color))
             {
-                color = "black";
+                if (!EntityColor.TryGetValue(displayValue.Variable.TrimEnd("_Var_2").ToLower(), out color))
+                {
+                    color = "black";
+                }
             }
 
             return color;

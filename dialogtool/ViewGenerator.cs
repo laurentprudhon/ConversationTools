@@ -38,7 +38,6 @@ namespace dialogtool
 
             foreach (var intent in dialog.Intents.Values.OrderBy(i => i.Name))
             {
-                Console.WriteLine(intent.Name);
                 List<ViewNode> conditions = new List<ViewNode>();
 
                 foreach (var node in intent.ChildrenNodes)
@@ -65,7 +64,6 @@ namespace dialogtool
                 {
                     if (child.Type == DialogNodeType.DialogVariableConditions || child.Type == DialogNodeType.DisambiguationQuestion || child.Type == DialogNodeType.SwitchOnEntityVariables || child.Type == DialogNodeType.FatHeadAnswers)
                     {
-                        Console.WriteLine(condition.DisplayValues[0].Value);
                         condition.AddChild(ReadNode(child, new ViewNode(child)));
                     }
                 }
@@ -157,9 +155,16 @@ namespace dialogtool
 
                     string question = ((DisambiguationQuestion)node).QuestionText;
 
-                    foreach (var option in ((DisambiguationQuestion)node).DisambiguationOptions)
+                    if (((DisambiguationQuestion)node).DisambiguationOptions != null)
                     {
-                        question = question + " \r\n -" + option.Text;
+                        foreach (var option in ((DisambiguationQuestion)node).DisambiguationOptions)
+                        {
+                            question = question + " \r\n -" + option.Text;
+                        }
+                    }
+                    else
+                    {
+                        question += "\r\n - Attention, absence d'option de désambiguïsation";
                     }
 
                     Value = "Question";
@@ -193,6 +198,11 @@ namespace dialogtool
 
                     Attributes.Add(new Attribute("title", uriattribute));
 
+                    break;
+
+                case DialogNodeType.RedirectToLongTail:
+
+                    Value = "Redirection en Long Tail";
                     break;
 
                 default:
