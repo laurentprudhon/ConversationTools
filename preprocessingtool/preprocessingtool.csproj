@@ -43,8 +43,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NLCTrainigFile.cs" />
+    <Compile Include="FasttextPretrainingFile.cs" />
+    <Compile Include="NLCToFasttextTrainingFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\fasttext\fasttext.csproj">
+      <Project>{e4e2d490-f321-4280-bc9d-ec45d719b238}</Project>
+      <Name>fasttext</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

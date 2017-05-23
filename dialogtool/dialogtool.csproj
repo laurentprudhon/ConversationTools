@@ -80,7 +80,6 @@
     <Compile Include="ViewGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
     <None Include="internaltest\internaltest_results.xlsx" />
   </ItemGroup>
   <ItemGroup>

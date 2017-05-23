@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -8,77 +7,20 @@ using System.Text;
 
 namespace fasttext
 {
-    class PredictionResult
+    class ModelTester
     {
-        public string Question { get; set;  }
-        public int ExpectedIntentIndex { get; set; }
-
-        public int IntentIndex1 { get; set; }
-        public float IntentProba1 { get; set; }
-        public int IntentIndex2 { get; set; }
-        public float IntentProba2 { get; set; }
-    }
-
-    class IntentPerf
-    {
-        public string Intent { get; set; }
-        public float Precision { get; set; }
-        public float Recall { get; set; }
-        public float F1 { get; set; }
-    }
-
-    class IntentsPairConfusion
-    {
-        public int IntentIndex1 { get; set; }
-        public int IntentIndex2 { get; set; }
-
-        public int Expected1Found1 { get; set; }
-        public int Expected1Found2 { get; set; }
-        public int Expected2Found1 { get; set; }
-        public int Expected2Found2 { get; set; }
-
-        public float ConfusionRate1To2 { get; set; }
-        public float ConfusionRate2To1 { get; set; }
-        public float ConfusionErrors { get; set; }
-    }
-
-    class FasttextLauncher
-    {
-        private static string EXECUTABLE_PATH = @"..\..\facebookresearch\fasttext.exe";
-        private static string WORKING_DIR = @"..\..\..\dialogtool\bin\Debug\fasttext";
-    
         static void Main(string[] args)
         {
-            string pretrainingFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\wiki.fr";
-            int lineCount = 0;
-            int lineMax = 400000;
-            using (StreamReader sr = new StreamReader(pretrainingFilePath + ".vec", Encoding.UTF8))
-            {
-                using (StreamWriter sw = new StreamWriter(pretrainingFilePath + "."+lineMax+".vec", false, Encoding.GetEncoding("iso8859-1")))
-                {
-                    string line = null;
-                    sr.ReadLine();
-                    sw.WriteLine(lineMax + " " + 300);
-                    while((line = sr.ReadLine()) != null)
-                    {
-                        sw.WriteLine(line);
-                        lineCount++;
-                        if (lineCount >= lineMax) break;
-                    }
-                }
-            }
-            return;
-            
-                //var result = ExecutableLauncher.ExecuteCommand(EXECUTABLE_PATH, "test model_savings.bin savings.valid", Path.GetFullPath(WORKING_DIR));
+            GeneratePerfAnalysisFile();
+        }
 
-                // fasttext.exe supervised -input savings.train -output model_savings -epoch 20 -lr 1 -wordNgrams 2 -ws 10 -dim 300 -pretrainedVectors wiki.fr.vec
-                // fasttext.exe quantize -output model_savings1 -input savings.train -qnorm -retrain -epoch 1
-                // fasttext.exe test model_savings1.ftz SAV_NLC_100520171.valid
-
-                var DATASET_NAME = "SAV_NLC_100520171";
+        public static void GeneratePerfAnalysisFile()
+        {
+            var WORKING_DIR = @"..\fasttext\tests\";
+            var DATASET_NAME = "SAV_NLC_100520171";
             var MODEL_NAME = "model_savings1";
 
-            string trainingFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\"+DATASET_NAME+".train";
+            string trainingFilePath = WORKING_DIR + DATASET_NAME + ".train";
             ISet<string> intentsSet = new HashSet<string>();
             var intentsCountTraining = new Dictionary<string, int>();
             var trainingSamples = new Dictionary<string, IList<string>>();
@@ -100,33 +42,33 @@ namespace fasttext
                     {
                         intentsCountTraining[intent] += 1;
                     }
-                    if(!trainingSamples.ContainsKey(intent))
-                    {                        
+                    if (!trainingSamples.ContainsKey(intent))
+                    {
                         trainingSamples.Add(intent, new List<string>());
                     }
                     trainingSamples[intent].Add(trainingQuestion);
                 }
             }
 
-            string validationFilePath = @"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\"+DATASET_NAME+".valid";
+            string validationFilePath = WORKING_DIR + DATASET_NAME + ".valid";
             IDictionary<string, string> annotatedQuestions = new Dictionary<string, string>();
             var intentsCountValidation = new Dictionary<string, int>();
             using (StreamReader sr = new StreamReader(validationFilePath, Encoding.UTF8))
             {
                 string line = null;
-                while((line = sr.ReadLine()) != null)
+                while ((line = sr.ReadLine()) != null)
                 {
                     int endOfLabel = line.IndexOf(' ');
                     string intent = line.Substring(9, endOfLabel - 9);
                     string question = line.Substring(endOfLabel + 1);
 
-                    if(!intentsSet.Contains(intent))
+                    if (!intentsSet.Contains(intent))
                     {
                         intentsSet.Add(intent);
                     }
-                    if(!intentsCountValidation.ContainsKey(intent))
+                    if (!intentsCountValidation.ContainsKey(intent))
                     {
-                        intentsCountValidation.Add(intent, 1);                        
+                        intentsCountValidation.Add(intent, 1);
                     }
                     else
                     {
@@ -140,7 +82,7 @@ namespace fasttext
             }
             IList<string> intents = new List<string>(intentsSet.OrderBy(i => i));
             IDictionary<string, int> intentsIndexes = new Dictionary<string, int>();
-            for(int i = 0; i < intents.Count; i++)
+            for (int i = 0; i < intents.Count; i++)
             {
                 var intent = intents[i];
                 intentsIndexes.Add(intent, i);
@@ -149,47 +91,45 @@ namespace fasttext
             int[,] confusionMatrix = new int[intents.Count, intents.Count];
             var predictionResults = new List<PredictionResult>();
 
-            var process = ExecutableLauncher.LaunchCommand(EXECUTABLE_PATH, "predict-prob "+MODEL_NAME+".ftz - 2", Path.GetFullPath(WORKING_DIR));
-            foreach(var question in annotatedQuestions.Keys)
+            using (SentenceClassifier classifier = new SentenceClassifier(WORKING_DIR + MODEL_NAME))
             {
-                var annotatedIntent = annotatedQuestions[question];
-                var annotatedIntentIndex = intentsIndexes[annotatedIntent];
+                foreach (var question in annotatedQuestions.Keys)
+                {
+                    var annotatedIntent = annotatedQuestions[question];
+                    var annotatedIntentIndex = intentsIndexes[annotatedIntent];
 
-                ExecutableLauncher.SendInputLine(process, question);
-                var output = ExecutableLauncher.ReadOutputLine(process);
-                string[] results = output.Split(' ');
-                var intent1 = results[0].Substring(9);
-                var strproba1 = results[1];
-                var intent2 = results[2].Substring(9);
-                var strproba2 = results[3];
+                    var result = classifier.PredictLabels(question);
 
-                var predictionResult = new PredictionResult();
-                predictionResult.Question = question;
-                predictionResult.ExpectedIntentIndex = annotatedIntentIndex;
-                predictionResult.IntentIndex1 = intentsIndexes[intent1];
-                predictionResult.IntentProba1 = float.Parse(strproba1, CultureInfo.InvariantCulture.NumberFormat);
-                predictionResult.IntentIndex2 = intentsIndexes[intent2];
-                predictionResult.IntentProba2 = float.Parse(strproba2, CultureInfo.InvariantCulture.NumberFormat);
-                predictionResults.Add(predictionResult);
+                    var predictionResult = new PredictionResult();
+                    predictionResult.Question = question;
+                    predictionResult.ExpectedIntentIndex = annotatedIntentIndex;
+                    predictionResult.IntentIndex1 = intentsIndexes[result.Label1];
+                    predictionResult.IntentProba1 = result.Proba1;
+                    if (result.Label2 != null)
+                    {
+                        predictionResult.IntentIndex2 = intentsIndexes[result.Label2];
+                        predictionResult.IntentProba2 = result.Proba2;
+                    }
+                    predictionResults.Add(predictionResult);
 
-                confusionMatrix[annotatedIntentIndex, predictionResult.IntentIndex1]++;
+                    confusionMatrix[annotatedIntentIndex, predictionResult.IntentIndex1]++;
+                }
             }
-            ExecutableLauncher.Kill(process);
 
             var intentsPerfs = new List<IntentPerf>();
-            for(int intentIndex = 0; intentIndex < intents.Count; intentIndex++)
+            for (int intentIndex = 0; intentIndex < intents.Count; intentIndex++)
             {
                 string intent = intents[intentIndex];
                 int truePositives = confusionMatrix[intentIndex, intentIndex];
                 int falsePositives = 0;
-                for(int j=0; j<intents.Count;j++)
+                for (int j = 0; j < intents.Count; j++)
                 {
                     if (j != intentIndex) falsePositives += confusionMatrix[j, intentIndex];
                 }
                 int falseNegatives = 0;
                 for (int j = 0; j < intents.Count; j++)
                 {
-                    if (j != intentIndex) falseNegatives += confusionMatrix[intentIndex,j];
+                    if (j != intentIndex) falseNegatives += confusionMatrix[intentIndex, j];
                 }
 
                 var intentPerf = new IntentPerf();
@@ -238,7 +178,7 @@ namespace fasttext
                     {
                         intentsPair.ConfusionRate1To2 = (float)intentsPair.Expected1Found2 / intentsPair.Expected1Found1;
                     }
-                    else if(intentsPair.Expected1Found2 > 0)
+                    else if (intentsPair.Expected1Found2 > 0)
                     {
                         intentsPair.ConfusionRate1To2 = 1;
                     }
@@ -246,21 +186,20 @@ namespace fasttext
                     {
                         intentsPair.ConfusionRate2To1 = (float)intentsPair.Expected2Found1 / intentsPair.Expected2Found2;
                     }
-                    else if(intentsPair.Expected2Found1 > 0)
+                    else if (intentsPair.Expected2Found1 > 0)
                     {
                         intentsPair.ConfusionRate2To1 = 1;
                     }
                     intentsConfusion.Add(intentsPair);
                 }
             }
-
             
-            using (StreamWriter sw = new StreamWriter(@"C:\Users\PRUDHOLU\Documents\GitHubVisualStudio\ConversationTools\dialogtool\bin\Debug\fasttext\"+MODEL_NAME+".results.csv", false, Encoding.GetEncoding("iso8859-1")))
+            using (StreamWriter sw = new StreamWriter(@"..\fasttext\" + MODEL_NAME + ".results.csv", false, Encoding.GetEncoding("iso8859-1")))
             {
                 sw.WriteLine("1. Intents performance");
                 sw.WriteLine();
                 sw.WriteLine("Intent;# Training;# Validation;F1;Precision;Recall");
-                foreach(var intentPerf in intentsPerfs.OrderByDescending(perf => perf.F1))
+                foreach (var intentPerf in intentsPerfs.OrderByDescending(perf => perf.F1))
                 {
                     var trainingCount = 0;
                     intentsCountTraining.TryGetValue(intentPerf.Intent, out trainingCount);
@@ -304,7 +243,7 @@ namespace fasttext
                 }
                 sw.WriteLine();
 
-                sw.WriteLine();                
+                sw.WriteLine();
                 sw.WriteLine();
 
                 sw.WriteLine("3. Detailed error analysis for each intent");
@@ -331,7 +270,7 @@ namespace fasttext
                     sw.WriteLine();
 
                     sw.WriteLine("Questions correctly classified in this class");
-                    foreach(var predictionResult in predictionResults.Where(pred => pred.ExpectedIntentIndex == expectedIntentIndex && pred.IntentIndex1 == expectedIntentIndex).OrderByDescending(pred => pred.IntentProba1))
+                    foreach (var predictionResult in predictionResults.Where(pred => pred.ExpectedIntentIndex == expectedIntentIndex && pred.IntentIndex1 == expectedIntentIndex).OrderByDescending(pred => pred.IntentProba1))
                     {
                         sw.Write(predictionResult.Question.Replace(';', ' '));
                         sw.Write(';');
@@ -380,5 +319,40 @@ namespace fasttext
                 }
             }
         }
+    }
+
+
+    class PredictionResult
+    {
+        public string Question { get; set; }
+        public int ExpectedIntentIndex { get; set; }
+
+        public int IntentIndex1 { get; set; }
+        public float IntentProba1 { get; set; }
+        public int IntentIndex2 { get; set; }
+        public float IntentProba2 { get; set; }
+    }
+
+    class IntentPerf
+    {
+        public string Intent { get; set; }
+        public float Precision { get; set; }
+        public float Recall { get; set; }
+        public float F1 { get; set; }
+    }
+
+    class IntentsPairConfusion
+    {
+        public int IntentIndex1 { get; set; }
+        public int IntentIndex2 { get; set; }
+
+        public int Expected1Found1 { get; set; }
+        public int Expected1Found2 { get; set; }
+        public int Expected2Found1 { get; set; }
+        public int Expected2Found2 { get; set; }
+
+        public float ConfusionRate1To2 { get; set; }
+        public float ConfusionRate2To1 { get; set; }
+        public float ConfusionErrors { get; set; }
     }
 }

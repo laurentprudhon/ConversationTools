@@ -1,14 +1,13 @@
-﻿using System;
+﻿using fasttext;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace preprocessingtool
 {
-    public class NLCTrainigFile
+    public class NLCToFasttextTrainingFile
     {
         static void Main(string[] args)
         {
@@ -78,59 +77,7 @@ namespace preprocessingtool
                                 sbQuestion.Append(FASTTEXT_LABEL_PREFIX);
                                 sbQuestion.Append(labelAndQuestion.Label);
                                 sbQuestion.Append(' ');
-                                bool previousCharNonSpace = false;
-                                foreach (var chr in labelAndQuestion.Question)
-                                {
-                                    if (Char.IsLetter(chr))
-                                    {
-                                        sbQuestion.Append(Char.ToLower(chr));
-                                        previousCharNonSpace = true;
-                                    }
-                                    else if (Char.IsDigit(chr))
-                                    {
-                                        switch (chr)
-                                        {
-                                            case '0':
-                                                sbQuestion.Append("zero ");
-                                                break;
-                                            case '1':
-                                                sbQuestion.Append("un ");
-                                                break;
-                                            case '2':
-                                                sbQuestion.Append("deux ");
-                                                break;
-                                            case '3':
-                                                sbQuestion.Append("trois ");
-                                                break;
-                                            case '4':
-                                                sbQuestion.Append("quatre ");
-                                                break;
-                                            case '5':
-                                                sbQuestion.Append("cinq ");
-                                                break;
-                                            case '6':
-                                                sbQuestion.Append("six ");
-                                                break;
-                                            case '7':
-                                                sbQuestion.Append("sept ");
-                                                break;
-                                            case '8':
-                                                sbQuestion.Append("huit ");
-                                                break;
-                                            case '9':
-                                                sbQuestion.Append("neuf ");
-                                                break;
-                                        }
-                                        previousCharNonSpace = true;
-                                    }
-                                    else
-                                    {
-                                        if (previousCharNonSpace)
-                                        {
-                                            sbQuestion.Append(' ');
-                                        }
-                                    }
-                                }
+                                sbQuestion.Append(SentenceClassifier.PreprocessSentence(labelAndQuestion.Question));
 
                                 bool writeToValidation = questionIndex >= (trainingSetNumber - 1) * bucketQuestionsCount && questionIndex < trainingSetNumber * bucketQuestionsCount;
                                 if (!writeToValidation)
@@ -153,6 +100,8 @@ namespace preprocessingtool
                 Console.WriteLine("ERROR : File " + csvFilePath + " doesn't exist");
             }
         }
+
+        
 
         private static Random rng = new Random();
 

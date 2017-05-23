@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace fasttext
 {
@@ -10,32 +9,27 @@ namespace fasttext
     {
         public static void TrainSkipgramModel()
         {
-
+            throw new NotImplementedException();
         }
 
         public static void TrainContinuousBagOfWordsModel()
         {
-
+            throw new NotImplementedException();
         }
 
         public static void QuantizeModel()
         {
-
+            throw new NotImplementedException();
         }
 
         public static void FindNearestNeighbors()
         {
-
+            throw new NotImplementedException();
         }
 
         public static void QueryForAnalogies()
         {
-
-        }
-
-        private WordEmbeddings()
-        {
-
-        }
+            throw new NotImplementedException();
+        }        
     }
 }
