@@ -20,7 +20,7 @@ namespace dialogtool
 
             if(intent != null)
             { 
-                ExecuteUserInputNode(dialog, intent, questionText, intent.EntityMatches, result);
+                ExecuteUserInputNode(dialog, intent, questionText, result);
             }
             else
             {
@@ -30,18 +30,25 @@ namespace dialogtool
             return result;
         }
 
-        public static DialogExecutionResult AnalyzeDisambiguationQuestion(Dialog dialog, DisambiguationQuestion question, DisambiguationOption option, string intentName)
+        public static DialogExecutionResult ExecuteUserInputNode(Dialog dialog, DialogNode dialogNode, string userInputText, DialogExecutionResult result)
         {
-            var result = new DialogExecutionResult(question.LineNumber.ToString(), question.QuestionText, intentName);
-            result.SetDisambiguationOption(option);
-            
-            ExecuteUserInputNode(dialog, question, option.Text, new EntityMatch[] { question.EntityMatch }, result);
+            IEnumerable<EntityMatch> entityMatches = null;
+            if(dialogNode is MatchIntentAndEntities)
+            {
+                var intent = (MatchIntentAndEntities)dialogNode;
+                entityMatches = intent.EntityMatches;
+            }
+            else if(dialogNode is DisambiguationQuestion)
+            {
+                var question = (DisambiguationQuestion)dialogNode;
+                entityMatches = new EntityMatch[] { question.EntityMatch };
+                result.AddUserInput(userInputText);
+            }
+            else
+            {
+                throw new ArgumentException("Dialog node must be of type MatchIntentAndEntities or DisambiguationQuestion");
+            }
 
-            return result;
-        }
-
-        private static void ExecuteUserInputNode(Dialog dialog, DialogNode dialogNode, string userInputText, IList<EntityMatch> entityMatches, DialogExecutionResult result)
-        {
             // Try to match entity values in the questions
             var entities = entityMatches.Select(entityMatch => entityMatch.Entity);
             EntityValuesMatchResult matchResult = EntityValuesMatcher.MatchEntityValues(entities, userInputText, dialog.ConceptsSynonyms, dialog.ConceptsRegex);
@@ -72,6 +79,8 @@ namespace dialogtool
 
             // Traverse the children nodes
             SelectChildNode(dialog, result.VariablesValues, dialogNode, null, result);
+
+            return result;
         }
 
         private static void ExecuteVariableAssignments(DialogNode dialogNode, IDictionary<string, string> variablesValues)
@@ -287,12 +296,13 @@ namespace dialogtool
         public string QuestionText { get; private set; }
         public string IntentName { get; private set; }
 
-        public DisambiguationOption DisambiguationOption { get; private set; }
-        internal void SetDisambiguationOption(DisambiguationOption option)
+        public void AddUserInput(string userInputText)
         {
-            DisambiguationOption = option;
+            if (UserInputs == null) UserInputs = new List<string>();
+            UserInputs.Add(userInputText);
         }
-
+        public IList<string> UserInputs { get; private set; }
+        
         public IList<DialogNodeExecution> DialogNodesExecutionPath { get; private set; }
         public void AddDialogNodeExecution(DialogNodeExecution dialogNodeExecution)
         {

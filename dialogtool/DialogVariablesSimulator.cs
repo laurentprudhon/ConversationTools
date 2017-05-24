@@ -130,6 +130,7 @@ namespace dialogtool
             {
                 var intentVariable = Variables["CLASSIFIER_CLASS_0"];
                 var variableAssignment = new DialogVariableAssignment(intentVariable, DialogVariableOperator.SetTo, intent.Name);
+                intent.AddVariableAssignment(variableAssignment);
                 AddDialogVariableAssignment(variableAssignment, intent.Type);
             }
             AddEntityMatches(intent.EntityMatches);
