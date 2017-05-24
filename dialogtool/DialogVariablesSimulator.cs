@@ -87,7 +87,7 @@ namespace dialogtool
                             // is to reset all entity variables not explicitly set => variable assignment is not useful
                             if (nodeType == DialogNodeType.FatHeadAnswers && (String.IsNullOrEmpty(previousValue) || previousValue.StartsWith("$(")))
                             {
-                                return false;
+                                return VariableCouldHaveBeenSetByEntityMatchBefore(variableAssignment.VariableName);
                             }
                             // Case 3 : the default behavior of RedirectToLongTail / DirectAnswer
                             // is to reset all entity variables n=> variable assignment is not useful
@@ -102,7 +102,7 @@ namespace dialogtool
                     }
                     else
                     {
-                        return false;
+                        return VariableCouldHaveBeenSetByEntityMatchBefore(variableAssignment.VariableName);
                     }
                 case DialogVariableOperator.CopyValueFromVariable:
                     var fromVariable = Variables[variableAssignment.Value];
@@ -122,6 +122,11 @@ namespace dialogtool
                 default:
                     throw new Exception("Unexpected variable assignment operator " + variableAssignment.Operator);
             }
+        }
+
+        private bool VariableCouldHaveBeenSetByEntityMatchBefore(string variableName)
+        {
+            return LastEntityMatches != null && LastEntityMatches.Where(em => em.EntityVariableName1 == variableName || em.EntityVariableName2 == variableName).FirstOrDefault() != null;
         }
 
         public void AddMatchIntentAndEntities(MatchIntentAndEntities intent)

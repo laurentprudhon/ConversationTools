@@ -15,7 +15,7 @@ namespace dialogdemo
 
         static void Main(string[] args)
         {
-            var selectInsurance = false; 
+            var selectInsurance = true; 
 
             var INTENTS_INSURANCE_MODEL_FILE_NAME = "model_demo_insurance.ftz";
             var INTENTS_SAVINGS_MODEL_FILE_NAME = "model_demo_savings.ftz";
@@ -179,6 +179,10 @@ namespace dialogdemo
                                 Console.WriteLine("@ Je dois afficher le message suivant : ");
                                 Console.ForegroundColor = ConsoleColor.Green;
                                 Console.WriteLine("  " + direct.MessageText);
+                            }
+                            else
+                            {
+
                             }
                             Console.ForegroundColor = ConsoleColor.Gray;
                             timeInMicrosec = (chrono.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L)));

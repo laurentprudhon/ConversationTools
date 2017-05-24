@@ -129,7 +129,10 @@ namespace dialogtool
                             if (!String.IsNullOrEmpty(varValue))
                             {
                                 ExecuteConditionalNode(dialog, variablesValues, childNode, result);
-                                return;
+                                if (result.ExecutionResult.DialogNode.Type != DialogNodeType.SwitchOnEntityVariables)
+                                {
+                                    return;
+                                }
                             }
                         }
                         break;
