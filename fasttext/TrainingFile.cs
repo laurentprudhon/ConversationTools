@@ -2,12 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace fasttext
 {
-    public class TrainingFile
+    class TrainingFile
     {
         static void Main(string[] args)
         {
@@ -100,8 +99,6 @@ namespace fasttext
                 Console.WriteLine("ERROR : File " + csvFilePath + " doesn't exist");
             }
         }
-
-        
 
         private static Random rng = new Random();
 

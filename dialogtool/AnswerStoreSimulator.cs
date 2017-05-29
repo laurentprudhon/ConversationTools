@@ -5,16 +5,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace dialogdemo
+namespace dialogtool
 {
-    class AnswerStoreSimulator
+    public class AnswerStoreSimulator
     {
-        private static string ANSWERS_DIR = @".\answers\";
+        private const string ANSWERS_DIR = @".\answers\";
 
-        public AnswerStoreSimulator(string answerUnitsFile)
+        public AnswerStoreSimulator(string answerUnitsFile, string answersDir = ANSWERS_DIR)
         {
             JsonSerializer serializer = new JsonSerializer();
-            using (StreamReader streamReader = new StreamReader(ANSWERS_DIR + answerUnitsFile))
+            using (StreamReader streamReader = new StreamReader(answersDir + answerUnitsFile))
             {
                 AnswerUnits = (List<AnswerUnit>)serializer.Deserialize(streamReader, typeof(List<AnswerUnit>));
                 // DEBUG <-- TO COMMENT

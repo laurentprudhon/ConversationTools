@@ -82,8 +82,10 @@ namespace fasttext
             StringBuilder sbResult = new StringBuilder();
 
             bool previousCharNonSpace = false;
-            foreach (var chr in sentence)
+            int lastIndex = sentence.Length - 1;
+            for (int i=0; i<=lastIndex; i++)
             {
+                var chr = sentence[i];
                 if (Char.IsLetter(chr))
                 {
                     sbResult.Append(Char.ToLower(chr));
@@ -124,13 +126,39 @@ namespace fasttext
                             sbResult.Append("neuf ");
                             break;
                     }
-                    previousCharNonSpace = true;
+                    previousCharNonSpace = false;
+                }
+                else if(chr == '.' || chr == '?' || chr == '!')
+                {
+                    if(i == lastIndex)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        var nextChr = sentence[i + 1];
+                        if(Char.IsLetterOrDigit(nextChr))
+                        {
+                            sbResult.Append(chr);
+                        }
+                        else
+                        {
+                            sbResult.Append('\n');
+                        }
+                        previousCharNonSpace = false;
+                    }
+                }
+                else if(chr == '\n')
+                {
+                    sbResult.Append('\n');
+                    previousCharNonSpace = false;
                 }
                 else
                 {
-                    if (previousCharNonSpace)
+                    if (previousCharNonSpace && i < lastIndex)
                     {
                         sbResult.Append(' ');
+                        previousCharNonSpace = false;
                     }
                 }
             }

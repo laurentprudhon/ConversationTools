@@ -30,7 +30,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>fasttext.TrainingFile</StartupObject>
+    <StartupObject>fasttext.PretrainingFile</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -51,7 +51,12 @@
     <Compile Include="SentenceClassifier.cs" />
     <Compile Include="WordEmbeddings.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\dialogtool\dialogtool.csproj">
+      <Project>{cb15dc81-7b08-44ec-800e-51bf19d26fe3}</Project>
+      <Name>dialogtool</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <Content Include="facebookresearch\fasttext.exe" />
   </ItemGroup>
