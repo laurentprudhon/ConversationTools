@@ -81,7 +81,7 @@ namespace dialogtool
         private static void WriteNode(ViewNode condition, XmlWriter xw)
         {
             //We don't write the root node, or any empty cell
-            if (condition.DisplayValues[0].Value != "root" && condition.DisplayValues[0].Value != "")
+            if (condition.DisplayValues.Count > 0 && condition.DisplayValues[0].Value != "root" && condition.DisplayValues[0].Value != "")
             {
                 xw.WriteStartElement("td");
 
