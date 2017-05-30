@@ -89,6 +89,7 @@ namespace dialogtool
 
             if (node.Type == DialogNodeType.DialogVariableConditions)
             {
+
                 foreach (var condition in ((DialogVariableConditions)node).VariableConditions)
                 {
 

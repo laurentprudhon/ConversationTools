@@ -6,7 +6,6 @@ namespace dialogtool
 {
     public static class ViewFile
     {
-        //private static List<string> Colors = new List<string>(new string[] { "darkorange", "red", "blue", "darkorchid", "green", "olive" });
         private static List<string> Colors = new List<string>(new string[] { "darkorchid", "blue", "green", "olive", "darkorange", "red", "pink"});
         //Entity = key
         //Color = value
@@ -42,8 +41,6 @@ namespace dialogtool
                     xw.WriteAttributeString("title", questions);
                     xw.WriteString(intent.Name);
                     xw.WriteEndElement(); // h1           
-
-                    //System.Console.WriteLine(intent.Name);
 
                     WriteColorCode(xw);
 
@@ -81,7 +78,7 @@ namespace dialogtool
         private static void WriteNode(ViewNode condition, XmlWriter xw)
         {
             //We don't write the root node, or any empty cell
-            if (condition.DisplayValues[0].Value != "root" && condition.DisplayValues[0].Value != "")
+            if (condition.DisplayValues.Count > 0 && condition.DisplayValues[0].Value != "root" && condition.DisplayValues[0].Value != "")
             {
                 xw.WriteStartElement("td");
 
@@ -96,7 +93,8 @@ namespace dialogtool
                 if (condition.DisplayValues.Count > 0)
                 {
                     foreach (var value in condition.DisplayValues)
-                    {                     
+                    {
+
                         xw.WriteStartElement("font");
                         if (value.Attributes.Count > 0)
                         {
