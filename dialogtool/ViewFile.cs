@@ -25,6 +25,11 @@ namespace dialogtool
 
             using (var xw = XmlWriter.Create(sourceFilePath + ".html", settings))
             {
+
+                xw.WriteStartElement("html");
+
+                WriteCSS(xw);
+
                 xw.WriteStartElement("body");
 
                 foreach (var intent in viewGenerator.Intents)
@@ -62,6 +67,7 @@ namespace dialogtool
                 }
 
                 xw.WriteEndElement(); // body
+                xw.WriteEndElement(); // html
             }
 
         }
@@ -85,7 +91,7 @@ namespace dialogtool
                 xw.WriteAttributeString("RowSpan", GetRawSpan(condition).ToString());
                 xw.WriteAttributeString("bgcolor", "#FAFAFA");
 
-                if (condition.DisplayValues[0].Attributes.Count > 0)
+                if (condition.DisplayValues[0].Attributes.Count > 0 && condition.DisplayValues[0].Type != DisplayValueType.Answer)
                 {
                     xw.WriteAttributeString(condition.DisplayValues[0].Attributes[0].Name, condition.DisplayValues[0].Attributes[0].Value);
                 }
@@ -94,9 +100,10 @@ namespace dialogtool
                 {
                     foreach (var value in condition.DisplayValues)
                     {
-
+                        xw.WriteStartElement("div");
+                        xw.WriteAttributeString("class", "tooltip");
                         xw.WriteStartElement("font");
-                        if (value.Attributes.Count > 0)
+                        if (value.Attributes.Count > 0 && value.Type != DisplayValueType.Answer)
                         {
                             foreach (var attribute in value.Attributes)
                             {
@@ -114,20 +121,23 @@ namespace dialogtool
                         }
 
                         xw.WriteEndElement(); //font
+
+                        if (value.Type == DisplayValueType.Answer)
+                        {
+                        if (value.Attributes.Count > 0)
+                        { 
+                            xw.WriteStartElement("span");
+                            xw.WriteAttributeString("class", "tooltiptext");
+                            //TODO : créer un vrai attribut de la classe DisplayValue pour les réponses
+                            xw.WriteString(value.Attributes[0].Value);
+                            xw.WriteEndElement(); //span
+                        }
+
+                        }
+
+                        xw.WriteEndElement(); //div
                     }
                 }
-                //if there's no child node left, it's the end of the data-tree --> 
-                /*else
-                {
-                    xw.WriteStartElement("font");
-
-                    xw.WriteAttributeString("color", GetColor(condition.DisplayValues[0]));
-
-                    xw.WriteString(condition.DisplayValues[0].Value);
-
-                    xw.WriteEndElement(); //font
-
-                }*/
 
                
                 xw.WriteEndElement(); //td
@@ -201,7 +211,7 @@ namespace dialogtool
                 xw.WriteAttributeString("color", entitycolor.Value);
                 xw.WriteString(entitycolor.Key + " | ");
                 xw.WriteEndElement(); // font
-
+                
             }
 
             xw.WriteEndElement(); // p
@@ -222,6 +232,15 @@ namespace dialogtool
 
             return color;
 
+        }
+
+        private static void WriteCSS(XmlWriter xw)
+        {
+
+            xw.WriteStartElement("style");
+            xw.WriteString(".tooltip { position: relative; display: inline-block; border-bottom: 1px dotted black;}.tooltip .tooltiptext {visibility: hidden;width: 800px;background-color: #CEE3F6;color: #141907;padding: 5px 0;border-radius: 6px;position: absolute;z-index: 1;}.tooltip:hover .tooltiptext {visibility: visible;}");
+            xw.WriteEndElement(); //style
+            
         }
 
         //TrimEnd() overload using a string instead of a char[]

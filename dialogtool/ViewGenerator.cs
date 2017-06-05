@@ -10,6 +10,7 @@ namespace dialogtool
     //each intent consists of a list of data-tree ViewNode objects
     class ViewGenerator
     {
+
         public struct Intent
         {
             public string Name;
@@ -112,17 +113,26 @@ namespace dialogtool
 
     }
 
+    public enum DisplayValueType
+    {
+        Question,
+        Answer,
+        Variable,
+    }
+
     //Label and attributes of each entity
     public class DisplayValue
     {
         public string Value { get;  set; }
         public string Variable { get;  set; }
         public List<Attribute> Attributes { get; set; }
+        public DisplayValueType Type { get; set; }
 
         public DisplayValue(DialogVariableCondition condition)
         {
             Value = (condition.Comparison != ConditionComparison.HasValue) ? condition.Value : "";
             Variable = condition.VariableName;
+            Type = DisplayValueType.Variable;
             Attributes = new List<Attribute>();
             string synonyms = "";
 
@@ -140,9 +150,9 @@ namespace dialogtool
                 }
             }
 
-            Attributes.Add(new Attribute("title", synonyms));
+            Attributes.Add(new Attribute("title", synonyms));       
 
-        }
+    }
 
         //Constructor Overload
         public DisplayValue(DialogNode node)
@@ -169,6 +179,7 @@ namespace dialogtool
                     }
 
                     Value = "Question";
+                    Type = DisplayValueType.Question;
                     Variable = " ";
                     Attributes.Add(new Attribute("title", question));
 
@@ -179,25 +190,41 @@ namespace dialogtool
                     string[] URI = ((FatHeadAnswers)node).MappingUris;
 
                     Value = "Réponse";
+                    Type = DisplayValueType.Answer;
                     Variable = " ";
                     string uriattribute = "";
+                    string reponse = "";
                     int i = 0;
+
+                    //TODO : remonter cette variable (multiple instanciation == HIGH COST)
+                    //var answerStore = new AnswerStoreSimulator("au_assurance.json");
 
                     foreach (var uri in URI)
                     {
-                        if (i > 0)
+
+                        /*if (answerStore.GetAnswerUnitForMappingUri(uri) != null)
                         {
-                            uriattribute = uriattribute + " \r\n" + uri;
+                            reponse = answerStore.GetAnswerUnitForMappingUri(uri).content.plainText;
+                            //Console.WriteLine("Reponse : " + reponse);
                         }
                         else
                         {
-                            uriattribute = uri;
+                            reponse = "introuvable dans l'Answer Store";
+                        }*/
+
+                        if (i > 0)
+                        {
+                            uriattribute = uriattribute + " \r\n" + "URI : \r\n" + uri + " \r\n" + "Réponse : \r\n" + reponse;
+                        }
+                        else
+                        {
+                            uriattribute = "URI : \r\n" + uri + " \r\n" + "Réponse : \r\n" + reponse;
                         }
 
                         i += 1;
                     }
 
-                    Attributes.Add(new Attribute("title", uriattribute));
+                    Attributes.Add(new Attribute("title", uriattribute + reponse));
 
                     break;
 
