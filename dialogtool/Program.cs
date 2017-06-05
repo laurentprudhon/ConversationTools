@@ -101,7 +101,6 @@ namespace dialogtool
                     case DialogToolCommands.gensource:
                     case DialogToolCommands.gendialog:
                     case DialogToolCommands.check:
-                    case DialogToolCommands.view:
                     case DialogToolCommands.answers:
                     case DialogToolCommands.internaltest:
                         if (args.Length != 2)
@@ -113,6 +112,7 @@ namespace dialogtool
                         }
                         break;
                     case DialogToolCommands.debug:
+                    case DialogToolCommands.view:
                         if (args.Length != 3)
                         {
                             Console.WriteLine("ERROR : two parameters expected for dialogtool command \"" + command + "\"");
@@ -194,7 +194,7 @@ namespace dialogtool
                         CheckFileConsistency(fileInfo1);
                         break;
                     case DialogToolCommands.view:
-                        ViewDialogBranches(fileInfo1);
+                        ViewDialogBranches(fileInfo1, args[2]);
                         break;
                     case DialogToolCommands.answers:
                         GenerateAnswersMappingURIs(fileInfo1);
@@ -321,7 +321,7 @@ namespace dialogtool
             return dialog;
         }
 
-        private static void ViewDialogBranches(FileInfo dialogFileInfo)
+        private static void ViewDialogBranches(FileInfo dialogFileInfo, string answerstoreFile)
         {
             Console.WriteLine("Generate view file :");
             Console.WriteLine();
@@ -334,7 +334,7 @@ namespace dialogtool
             var sourceFilePath = @"view\" + sourceOrDialogFileName;
             Console.Write("Writing " + sourceFilePath + " ... ");
 
-            ViewFile.Write(dialog, @"view\" + sourceOrDialogFileName);
+            ViewFile.Write(dialog, @"view\" + sourceOrDialogFileName, answerstoreFile);
 
             Console.WriteLine("OK");
             Console.WriteLine("");

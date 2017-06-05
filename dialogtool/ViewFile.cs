@@ -11,10 +11,10 @@ namespace dialogtool
         //Color = value
         private static Dictionary<string, string> EntityColor = new Dictionary<string, string>();
 
-        public static void Write(Dialog dialog, string sourceFilePath)
+        public static void Write(Dialog dialog, string sourceFilePath, string answerstoreFile)
         {
 
-            ViewGenerator viewGenerator = new ViewGenerator(dialog);
+            ViewGenerator viewGenerator = new ViewGenerator(dialog, answerstoreFile);
             
             GetColorCode(dialog);
 
@@ -129,7 +129,7 @@ namespace dialogtool
                             xw.WriteStartElement("span");
                             xw.WriteAttributeString("class", "tooltiptext");
                             //TODO : créer un vrai attribut de la classe DisplayValue pour les réponses
-                            xw.WriteString(value.Attributes[0].Value);
+                            xw.WriteRaw(value.Attributes[0].Value);
                             xw.WriteEndElement(); //span
                         }
 
@@ -238,7 +238,7 @@ namespace dialogtool
         {
 
             xw.WriteStartElement("style");
-            xw.WriteString(".tooltip { position: relative; display: inline-block; border-bottom: 1px dotted black;}.tooltip .tooltiptext {visibility: hidden;width: 800px;background-color: #CEE3F6;color: #141907;padding: 5px 0;border-radius: 6px;position: absolute;z-index: 1;}.tooltip:hover .tooltiptext {visibility: visible;}");
+            xw.WriteString(".tooltip { position: relative; display: inline-block; border-bottom: 1px dotted black;}.tooltip .tooltiptext {visibility: hidden;width: 900px;background-color: #CEE3F6;color: #141907;padding: 5px 0;border-radius: 6px;position: absolute;z-index: 1;}.tooltip:hover .tooltiptext {visibility: visible;}");
             xw.WriteEndElement(); //style
             
         }

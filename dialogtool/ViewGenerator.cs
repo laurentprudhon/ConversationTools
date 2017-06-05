@@ -28,14 +28,17 @@ namespace dialogtool
 
         }
 
+        private AnswerStoreSimulator answerStore;
+
         //The core attribute of ViewGenerator
         //Consists of a list of Intents, each intent containing a list of data-tree ViewNode objects
         public List<Intent> Intents;
 
-        public ViewGenerator(Dialog dialog)
+        public ViewGenerator(Dialog dialog, string answerstoreFile)
         {
 
             Intents = new List<Intent>();
+            answerStore = new AnswerStoreSimulator(answerstoreFile);
 
             foreach (var intent in dialog.Intents.Values.OrderBy(i => i.Name))
             {
@@ -52,7 +55,7 @@ namespace dialogtool
 
         private ViewNode ReadRoot(DialogNode node)
         {
-            ViewNode condition = new ViewNode(node);
+            ViewNode condition = new ViewNode(node, answerStore);
             return ReadNode(node, condition);
         }
 
@@ -65,7 +68,7 @@ namespace dialogtool
                 {
                     if (child.Type == DialogNodeType.DialogVariableConditions || child.Type == DialogNodeType.DisambiguationQuestion || child.Type == DialogNodeType.SwitchOnEntityVariables || child.Type == DialogNodeType.FatHeadAnswers)
                     {
-                        condition.AddChild(ReadNode(child, new ViewNode(child)));
+                        condition.AddChild(ReadNode(child, new ViewNode(child, answerStore)));
                     }
                 }
             }
@@ -82,7 +85,7 @@ namespace dialogtool
         public List<ViewNode> Children { get; set; }
 
         //Constructor
-        public ViewNode(DialogNode node)
+        public ViewNode(DialogNode node, AnswerStoreSimulator answerStore)
         {
             Children = new List<ViewNode>();
             DisplayValues = new List<DisplayValue>();
@@ -100,7 +103,7 @@ namespace dialogtool
             }
             else
             {
-                DisplayValues.Add(new DisplayValue(node));
+                DisplayValues.Add(new DisplayValue(node, answerStore));
             }
                  
         }
@@ -155,7 +158,7 @@ namespace dialogtool
     }
 
         //Constructor Overload
-        public DisplayValue(DialogNode node)
+        public DisplayValue(DialogNode node, AnswerStoreSimulator answerStore)
         {
             Value = Variable = " ";
             Attributes = new List<Attribute>();
@@ -202,7 +205,7 @@ namespace dialogtool
                     foreach (var uri in URI)
                     {
 
-                        /*if (answerStore.GetAnswerUnitForMappingUri(uri) != null)
+                        if (answerStore.GetAnswerUnitForMappingUri(uri) != null)
                         {
                             reponse = answerStore.GetAnswerUnitForMappingUri(uri).content.plainText;
                             //Console.WriteLine("Reponse : " + reponse);
@@ -210,15 +213,15 @@ namespace dialogtool
                         else
                         {
                             reponse = "introuvable dans l'Answer Store";
-                        }*/
+                        }
 
                         if (i > 0)
                         {
-                            uriattribute = uriattribute + " \r\n" + "URI : \r\n" + uri + " \r\n" + "Réponse : \r\n" + reponse;
+                            uriattribute = uriattribute + "<br>" + "URI :  " + uri + " <br>" + "Réponse : <br>" + reponse;
                         }
                         else
                         {
-                            uriattribute = "URI : \r\n" + uri + " \r\n" + "Réponse : \r\n" + reponse;
+                            uriattribute = "URI : " + uri + "<br>" + "Réponse : <br>" + reponse;
                         }
 
                         i += 1;
