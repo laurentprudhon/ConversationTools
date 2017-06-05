@@ -10,6 +10,7 @@ namespace dialogtool
     //each intent consists of a list of data-tree ViewNode objects
     class ViewGenerator
     {
+
         public struct Intent
         {
             public string Name;
@@ -27,14 +28,17 @@ namespace dialogtool
 
         }
 
+        private AnswerStoreSimulator answerStore;
+
         //The core attribute of ViewGenerator
         //Consists of a list of Intents, each intent containing a list of data-tree ViewNode objects
         public List<Intent> Intents;
 
-        public ViewGenerator(Dialog dialog)
+        public ViewGenerator(Dialog dialog, string answerstoreFile)
         {
 
             Intents = new List<Intent>();
+            answerStore = new AnswerStoreSimulator(answerstoreFile);
 
             foreach (var intent in dialog.Intents.Values.OrderBy(i => i.Name))
             {
@@ -51,7 +55,7 @@ namespace dialogtool
 
         private ViewNode ReadRoot(DialogNode node)
         {
-            ViewNode condition = new ViewNode(node);
+            ViewNode condition = new ViewNode(node, answerStore);
             return ReadNode(node, condition);
         }
 
@@ -64,7 +68,7 @@ namespace dialogtool
                 {
                     if (child.Type == DialogNodeType.DialogVariableConditions || child.Type == DialogNodeType.DisambiguationQuestion || child.Type == DialogNodeType.SwitchOnEntityVariables || child.Type == DialogNodeType.FatHeadAnswers)
                     {
-                        condition.AddChild(ReadNode(child, new ViewNode(child)));
+                        condition.AddChild(ReadNode(child, new ViewNode(child, answerStore)));
                     }
                 }
             }
@@ -81,7 +85,7 @@ namespace dialogtool
         public List<ViewNode> Children { get; set; }
 
         //Constructor
-        public ViewNode(DialogNode node)
+        public ViewNode(DialogNode node, AnswerStoreSimulator answerStore)
         {
             Children = new List<ViewNode>();
             DisplayValues = new List<DisplayValue>();
@@ -89,6 +93,7 @@ namespace dialogtool
 
             if (node.Type == DialogNodeType.DialogVariableConditions)
             {
+
                 foreach (var condition in ((DialogVariableConditions)node).VariableConditions)
                 {
 
@@ -98,7 +103,7 @@ namespace dialogtool
             }
             else
             {
-                DisplayValues.Add(new DisplayValue(node));
+                DisplayValues.Add(new DisplayValue(node, answerStore));
             }
                  
         }
@@ -111,17 +116,26 @@ namespace dialogtool
 
     }
 
+    public enum DisplayValueType
+    {
+        Question,
+        Answer,
+        Variable,
+    }
+
     //Label and attributes of each entity
     public class DisplayValue
     {
         public string Value { get;  set; }
         public string Variable { get;  set; }
         public List<Attribute> Attributes { get; set; }
+        public DisplayValueType Type { get; set; }
 
         public DisplayValue(DialogVariableCondition condition)
         {
             Value = (condition.Comparison != ConditionComparison.HasValue) ? condition.Value : "";
             Variable = condition.VariableName;
+            Type = DisplayValueType.Variable;
             Attributes = new List<Attribute>();
             string synonyms = "";
 
@@ -139,12 +153,12 @@ namespace dialogtool
                 }
             }
 
-            Attributes.Add(new Attribute("title", synonyms));
+            Attributes.Add(new Attribute("title", synonyms));       
 
-        }
+    }
 
         //Constructor Overload
-        public DisplayValue(DialogNode node)
+        public DisplayValue(DialogNode node, AnswerStoreSimulator answerStore)
         {
             Value = Variable = " ";
             Attributes = new List<Attribute>();
@@ -168,6 +182,7 @@ namespace dialogtool
                     }
 
                     Value = "Question";
+                    Type = DisplayValueType.Question;
                     Variable = " ";
                     Attributes.Add(new Attribute("title", question));
 
@@ -178,25 +193,41 @@ namespace dialogtool
                     string[] URI = ((FatHeadAnswers)node).MappingUris;
 
                     Value = "Réponse";
+                    Type = DisplayValueType.Answer;
                     Variable = " ";
                     string uriattribute = "";
+                    string reponse = "";
                     int i = 0;
+
+                    //TODO : remonter cette variable (multiple instanciation == HIGH COST)
+                    //var answerStore = new AnswerStoreSimulator("au_assurance.json");
 
                     foreach (var uri in URI)
                     {
-                        if (i > 0)
+
+                        if (answerStore.GetAnswerUnitForMappingUri(uri) != null)
                         {
-                            uriattribute = uriattribute + " \r\n" + uri;
+                            reponse = answerStore.GetAnswerUnitForMappingUri(uri).content.plainText;
+                            //Console.WriteLine("Reponse : " + reponse);
                         }
                         else
                         {
-                            uriattribute = uri;
+                            reponse = "introuvable dans l'Answer Store";
+                        }
+
+                        if (i > 0)
+                        {
+                            uriattribute = uriattribute + "<br>" + "URI :  " + uri + " <br>" + "Réponse : <br>" + reponse;
+                        }
+                        else
+                        {
+                            uriattribute = "URI : " + uri + "<br>" + "Réponse : <br>" + reponse;
                         }
 
                         i += 1;
                     }
 
-                    Attributes.Add(new Attribute("title", uriattribute));
+                    Attributes.Add(new Attribute("title", uriattribute + reponse));
 
                     break;
 
