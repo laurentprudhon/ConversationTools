@@ -527,17 +527,24 @@ namespace dialogtool
             dialog.LinkEntityMatchToEntityAndDialogVariables(dialogNode, entityMatch);
 
             // Handle if children nodes inside entity match pattern
-            if (inputElement.Element("if") != null)
+            if (inputElement.Element("if") != null || inputElement.Element("goto") != null)
             {
                 var listOfArtificialConditions = new List<DialogVariableCondition>();
                 var artificialCondition = new DialogVariableCondition(variableName1, ConditionComparison.HasValue, null);
                 listOfArtificialConditions.Add(artificialCondition);
                 var artificialIfRootNode = new DialogVariableConditions(dialogNode, listOfArtificialConditions, ConditionOperator.Or);
-                artificialIfRootNode.LineNumber = ((IXmlLineInfo)inputElement.Element("if")).LineNumber;
+                artificialIfRootNode.LineNumber = inputElement.Element("if") != null ? ((IXmlLineInfo)inputElement.Element("if")).LineNumber : ((IXmlLineInfo)inputElement.Element("goto")).LineNumber;
 
-                foreach (var ifElement in inputElement.Elements("if"))
+                foreach (var element in inputElement.Elements())
                 {
-                    AnalyzeDialogVariableConditions(artificialIfRootNode, ifElement, dialogVariables, isFirstElement, ref inlineSwitchDialogNode, ref switchSecondIfElement);
+                    if (element.Name.LocalName == "if")
+                    {
+                        AnalyzeDialogVariableConditions(artificialIfRootNode, element, dialogVariables, isFirstElement, ref inlineSwitchDialogNode, ref switchSecondIfElement);
+                    }
+                    else if (element.Name.LocalName == "goto")
+                    {
+                        AnalyzeGotoOrAnswerNode(artificialIfRootNode, element, dialogVariables);
+                    }
                 }
                 dialogNode.ChildrenNodes.Add(artificialIfRootNode);
             }
