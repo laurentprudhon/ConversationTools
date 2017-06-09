@@ -418,23 +418,30 @@ namespace dialogtool
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(base.ToString());
-            if (EntityValuesMatchResult.ConceptSubstitutions != null && EntityValuesMatchResult.ConceptSubstitutions.Count > 0)
+            if (EntityValuesMatchResult != null)
             {
-                sb.Append("\n  > concepts substitutions");
-                foreach (var substitution in EntityValuesMatchResult.ConceptSubstitutions)
+                if (EntityValuesMatchResult.ConceptSubstitutions != null && EntityValuesMatchResult.ConceptSubstitutions.Count > 0)
                 {
-                    sb.Append("\n   - ");
-                    sb.Append(substitution.ToString());
+                    sb.Append("\n  > concepts substitutions");
+                    foreach (var substitution in EntityValuesMatchResult.ConceptSubstitutions)
+                    {
+                        sb.Append("\n   - ");
+                        sb.Append(substitution.ToString());
+                    }
+                }
+                if (EntityValuesMatchResult.EntityValueMatches != null && EntityValuesMatchResult.EntityValueMatches.Count > 0)
+                {
+                    sb.Append("\n  > entity values");
+                    foreach (var entityValueMatch in EntityValuesMatchResult.EntityValueMatches)
+                    {
+                        sb.Append("\n   - ");
+                        sb.Append(entityValueMatch.ToString());
+                    }
                 }
             }
-            if (EntityValuesMatchResult.EntityValueMatches != null && EntityValuesMatchResult.EntityValueMatches.Count > 0)
+            else
             {
-                sb.Append("\n  > entity values");
-                foreach (var entityValueMatch in EntityValuesMatchResult.EntityValueMatches)
-                {
-                    sb.Append("\n   - ");
-                    sb.Append(entityValueMatch.ToString());
-                }
+                sb.Append("\n  > ERROR pattern NOT YET SUPPORTED : disambiguation options not based on entity values");
             }
             return sb.ToString(); ;
         }

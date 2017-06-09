@@ -541,12 +541,19 @@ namespace dialogtool
                     {
                         AnalyzeDialogVariableConditions(artificialIfRootNode, element, dialogVariables, isFirstElement, ref inlineSwitchDialogNode, ref switchSecondIfElement);
                     }
-                    else if (element.Name.LocalName == "goto")
+                    else if (element.Name.LocalName == "goto" && element.Attribute("ref") != null)
                     {
-                        AnalyzeGotoOrAnswerNode(artificialIfRootNode, element, dialogVariables);
+                        var gotoRef = element.Attribute("ref").Value;
+                        if (!inputElement.Parent.Elements("input").Where(e => e.Attribute("id") != null && e.Attribute("id").Value == gotoRef).Any())
+                        {
+                            AnalyzeGotoOrAnswerNode(artificialIfRootNode, element, dialogVariables);
+                        }
                     }
                 }
-                dialogNode.ChildrenNodes.Add(artificialIfRootNode);
+                if (artificialIfRootNode.ChildrenNodes != null && artificialIfRootNode.ChildrenNodes.Count > 0)
+                {
+                    dialogNode.ChildrenNodes.Add(artificialIfRootNode);
+                }
             }
 
             return entityMatch;
