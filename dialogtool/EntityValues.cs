@@ -427,11 +427,20 @@ namespace dialogtool
             //var sentenceBefore = beforeSubstitution + ">>" + ReplacedText + "<<" + afterSubstitution;
             //var sentenceAfter = beforeSubstitution + ">>" + ReplacementText + "<<" + afterSubstitution;
             var listOfConcepts = "";
+            bool isFirst = true;
             foreach(var concept in ReplacementConceptGroup.Concepts)
             {
-                listOfConcepts += " '" + concept.Key + "'";
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    listOfConcepts += ",";
+                }
+                listOfConcepts += concept.Key;
             }
-            return "concept(s)" + listOfConcepts +" : replaced \"" + ReplacedText + "\" with \"" + ReplacementText + "\"";
+            return listOfConcepts + " : \"" + ReplacedText + "\" => " + ReplacementText;
         }
     }
 
@@ -456,7 +465,7 @@ namespace dialogtool
             //var beforeSubstitution = TextReplacedWithConcepts.Substring(0, StartIndex);
             //var afterSubstitution = TextReplacedWithConcepts.Substring(StopIndex + 1, TextReplacedWithConcepts.Length - StopIndex);
             //var sentenceBefore = beforeSubstitution + ">>" + MatchedWord + "<<" + afterSubstitution;
-            return "entity '" + EntityValue.Entity.Name + "' : matched \"" + MatchedWord + "\" as \'" + EntityValue.Name + "\'";
+            return EntityValue.Entity.Name + " : \"" + MatchedWord + "\" => " + EntityValue.Name;
         }
     }
 

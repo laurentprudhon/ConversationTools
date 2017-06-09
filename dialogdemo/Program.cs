@@ -15,7 +15,8 @@ namespace dialogdemo
 
         static void Main(string[] args)
         {
-            var selectInsurance = true; 
+            var selectInsurance = false;
+            var displayDebugInfo = true;
 
             var INTENTS_INSURANCE_MODEL_FILE_NAME = "model_demo_insurance.ftz";
             var INTENTS_SAVINGS_MODEL_FILE_NAME = "model_demo_savings.ftz";
@@ -77,6 +78,14 @@ namespace dialogdemo
                     chrono.Restart();
                     var intentResult = classifier.PredictLabels(userInputText);
                     chrono.Stop();
+                    if(displayDebugInfo)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.WriteLine("Classifier results :");
+                        Console.WriteLine("1. " + intentResult.Label1 + " -> " + (intentResult.Proba1 *100).ToString("00.00") + "%");
+                        Console.WriteLine("2. " + intentResult.Label2 + " -> " + (intentResult.Proba2 *100).ToString("00.00") + "%");
+                        Console.WriteLine();
+                    }
 
                     bool isFatHead = intentResult.Proba1 > 0.5;
                     Console.ForegroundColor = ConsoleColor.DarkGreen;
@@ -182,14 +191,34 @@ namespace dialogdemo
                             }
                             else
                             {
-
+                                Console.WriteLine("@ ERREUR - résultat de dialogue inattendu");
                             }
                             Console.ForegroundColor = ConsoleColor.Gray;
                             timeInMicrosec = (chrono.ElapsedTicks / (Stopwatch.Frequency / (1000L * 1000L)));
                             Console.WriteLine("Dialog interpreted in " + (timeInMicrosec > 1000 ? (timeInMicrosec / 1000).ToString() : ("0." + timeInMicrosec)) + " ms");
                             Console.WriteLine();
 
-                        } while (lastDisambiguationQuestion != null);
+                            if (displayDebugInfo &&  !(nodeExecution.DialogNode is DisambiguationQuestion))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Gray;
+                                Console.WriteLine("Dialog execution trace :");
+                                int i = 0;
+                                foreach (var nodeExec in dialogResult.DialogNodesExecutionPath)
+                                {
+                                    i++;
+                                    Console.Write(i + ". ");
+                                    switch(nodeExec.DialogNode.Type)
+                                    {
+                                        default:
+                                            Console.Write(nodeExec.ToString());
+                                            break;
+                                    }
+                                    Console.WriteLine(" (l:"+ nodeExec.DialogNode.LineNumber + ")");
+                                }
+                                Console.WriteLine();
+                            }
+
+                            } while (lastDisambiguationQuestion != null);
                     }
                 }
                 

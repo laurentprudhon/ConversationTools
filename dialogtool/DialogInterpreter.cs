@@ -41,7 +41,10 @@ namespace dialogtool
             else if(dialogNode is DisambiguationQuestion)
             {
                 var question = (DisambiguationQuestion)dialogNode;
-                entityMatches = new EntityMatch[] { question.EntityMatch };
+                if (question.EntityMatch != null)
+                {
+                    entityMatches = new EntityMatch[] { question.EntityMatch };
+                }
                 result.AddUserInput(userInputText);
             }
             else
@@ -49,33 +52,41 @@ namespace dialogtool
                 throw new ArgumentException("Dialog node must be of type MatchIntentAndEntities or DisambiguationQuestion");
             }
 
-            // Try to match entity values in the questions
-            var entities = entityMatches.Select(entityMatch => entityMatch.Entity);
-            EntityValuesMatchResult matchResult = EntityValuesMatcher.MatchEntityValues(entities, userInputText, dialog.ConceptsSynonyms, dialog.ConceptsRegex);
+            EntityValuesMatchResult matchResult = null;
+            if (entityMatches != null)
+            {
+                // Try to match entity values in the questions
+                var entities = entityMatches.Select(entityMatch => entityMatch.Entity);
+                matchResult = EntityValuesMatcher.MatchEntityValues(entities, userInputText, dialog.ConceptsSynonyms, dialog.ConceptsRegex);
+                
+                // Store the matched entity values in their assigned variables
+                foreach (var entityValuesGroup in matchResult.EntityValues.GroupBy(ev => ev.Entity))
+                {
+                    var entityMatch = entityMatches.Where(em => em.Entity == entityValuesGroup.Key).First();
+                    int matchIndex = 0;
+                    foreach (var entityValue in entityValuesGroup)
+                    {
+                        if (matchIndex == 0 && entityMatch.EntityVariableName1 != null)
+                        {
+                            result.VariablesValues[entityMatch.EntityVariableName1] = entityValue.Name;
+                        }
+                        else if (matchIndex == 1 && entityMatch.EntityVariableName2 != null)
+                        {
+                            result.VariablesValues[entityMatch.EntityVariableName2] = entityValue.Name;
+                        }
+                        matchIndex++;
+                    }
+                }
+                ExecuteVariableAssignments(dialogNode, result.VariablesValues);
+            }
 
             // Store the result of this execution
             var nodeExecution = new MatchEntitiesNodeExecution(dialogNode, matchResult);
-            result.AddDialogNodeExecution(nodeExecution);
-
-            // Store the matched entity values in their assigned variables
-            foreach (var entityValuesGroup in matchResult.EntityValues.GroupBy(ev => ev.Entity))
+            if(result.ExecutionResult != null && result.ExecutionResult.DialogNode == dialogNode)
             {
-                var entityMatch = entityMatches.Where(em => em.Entity == entityValuesGroup.Key).First();
-                int matchIndex = 0;
-                foreach (var entityValue in entityValuesGroup)
-                {
-                    if (matchIndex == 0 && entityMatch.EntityVariableName1 != null)
-                    {
-                        result.VariablesValues[entityMatch.EntityVariableName1] = entityValue.Name;
-                    }
-                    else if (matchIndex == 1 && entityMatch.EntityVariableName2 != null)
-                    {
-                        result.VariablesValues[entityMatch.EntityVariableName2] = entityValue.Name;
-                    }
-                    matchIndex++;
-                }
+                result.DialogNodesExecutionPath.Remove(result.ExecutionResult);
             }
-            ExecuteVariableAssignments(dialogNode, result.VariablesValues);
+            result.AddDialogNodeExecution(nodeExecution);
 
             // Traverse the children nodes
             SelectChildNode(dialog, result.VariablesValues, dialogNode, null, result);
@@ -409,17 +420,19 @@ namespace dialogtool
             StringBuilder sb = new StringBuilder(base.ToString());
             if (EntityValuesMatchResult.ConceptSubstitutions != null && EntityValuesMatchResult.ConceptSubstitutions.Count > 0)
             {
+                sb.Append("\n  > concepts substitutions");
                 foreach (var substitution in EntityValuesMatchResult.ConceptSubstitutions)
                 {
-                    sb.Append(" > ");
+                    sb.Append("\n   - ");
                     sb.Append(substitution.ToString());
                 }
             }
             if (EntityValuesMatchResult.EntityValueMatches != null && EntityValuesMatchResult.EntityValueMatches.Count > 0)
             {
+                sb.Append("\n  > entity values");
                 foreach (var entityValueMatch in EntityValuesMatchResult.EntityValueMatches)
                 {
-                    sb.Append(" > ");
+                    sb.Append("\n   - ");
                     sb.Append(entityValueMatch.ToString());
                 }
             }
