@@ -24,7 +24,7 @@ dialogtool check dialog\savings_0703.xml
 dialogtool check source\savings_0703.code.xml
 >  checks source or dialog file consistency => result\savings_0703.errors.csv
 
-dialogtool view dialog\savings_0703.xml
+dialogtool view input\savings_0703.xml au_epargne.json
 dialogtool view source\savings_0703.code.xml
 >  generates HTML view of dialog => result\savings_0703.view.html
 
