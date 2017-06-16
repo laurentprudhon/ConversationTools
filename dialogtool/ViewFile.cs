@@ -10,13 +10,14 @@ namespace dialogtool
         //Entity = key
         //Color = value
         private static Dictionary<string, string> EntityColor = new Dictionary<string, string>();
+        private static int numberAnswer;
 
         public static void Write(Dialog dialog, string sourceFilePath, string answerstoreFile)
         {
 
             ViewGenerator viewGenerator = new ViewGenerator(dialog, answerstoreFile);
-            
             GetColorCode(dialog);
+            numberAnswer = 0;
 
             var settings = new XmlWriterSettings();
             settings.Indent = true;
@@ -83,8 +84,8 @@ namespace dialogtool
         //Recursively write the nodes of the current ViewNode data-tree 
         private static void WriteNode(ViewNode condition, XmlWriter xw)
         {
-            //We don't write the root node, or any empty cell
-            if (condition.DisplayValues.Count > 0 && condition.DisplayValues[0].Value != "root" && condition.DisplayValues[0].Value != "")
+            //We don't write the root node, or the "HasValue" test
+            if (condition.DisplayValues.Count > 0 && condition.DisplayValues[0].Value != "root" && condition.DisplayValues[0].Value != "HasValue")
             {
                 xw.WriteStartElement("td");
 
@@ -113,7 +114,16 @@ namespace dialogtool
 
                         xw.WriteAttributeString("color", GetColor(value));
 
-                        xw.WriteString(value.Value);
+                        //If it's an answer, we count it to identify the answer node
+                        if (value.Type == DisplayValueType.Answer)
+                        {
+                            numberAnswer += 1;
+                            xw.WriteString(value.Value + numberAnswer.ToString());
+                        }
+                        else
+                        {
+                            xw.WriteString(value.Value);
+                        }
 
                         if (condition.DisplayValues.Count > 1)
                         {
@@ -122,16 +132,15 @@ namespace dialogtool
 
                         xw.WriteEndElement(); //font
 
-                        if (value.Type == DisplayValueType.Answer)
+                        if (value.Type == DisplayValueType.Answer || value.Type == DisplayValueType.Assign)
                         {
-                        if (value.Attributes.Count > 0)
-                        { 
-                            xw.WriteStartElement("span");
-                            xw.WriteAttributeString("class", "tooltiptext");
-                            //TODO : créer un vrai attribut de la classe DisplayValue pour les réponses
-                            xw.WriteRaw(value.Attributes[0].Value);
-                            xw.WriteEndElement(); //span
-                        }
+                            if (value.SecondaryInfo != "")
+                            {
+                                xw.WriteStartElement("span");
+                                xw.WriteAttributeString("class", "tooltiptext");
+                                xw.WriteRaw(value.SecondaryInfo);
+                                xw.WriteEndElement(); //span
+                            }
 
                         }
 

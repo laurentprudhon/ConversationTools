@@ -90,14 +90,39 @@ namespace dialogtool
             Children = new List<ViewNode>();
             DisplayValues = new List<DisplayValue>();
             Type = node.Type;
+            List<DialogVariableAssignment> assignList = new List<DialogVariableAssignment>();
 
             if (node.Type == DialogNodeType.DialogVariableConditions)
             {
 
                 foreach (var condition in ((DialogVariableConditions)node).VariableConditions)
                 {
+                    //If we force the value of another entity
+                    //Extract the assignements
+                    if (node.ChildrenNodes != null && node.ChildrenNodes.Count > 0)
+                    {
+                        foreach (var child in node.ChildrenNodes)
+                        {
+                            if (child.VariableAssignments != null && child.VariableAssignments.Count > 0)
+                            {
+                                foreach (var assign in child.VariableAssignments)
+                                {
+                                    assignList.Add(assign);
+                                }
+                            }
 
-                    DisplayValues.Add(new DisplayValue(condition));
+                        }
+                    }
+
+
+                    if (assignList.Count > 0)
+                    {
+                        DisplayValues.Add(new DisplayValue(condition, assignList));
+                    }
+                    else
+                    {
+                        DisplayValues.Add(new DisplayValue(condition));
+                    }
 
                 }
             }
@@ -121,6 +146,7 @@ namespace dialogtool
         Question,
         Answer,
         Variable,
+        Assign,
     }
 
     //Label and attributes of each entity
@@ -130,10 +156,27 @@ namespace dialogtool
         public string Variable { get;  set; }
         public List<Attribute> Attributes { get; set; }
         public DisplayValueType Type { get; set; }
+        public string SecondaryInfo { get; set; }
 
         public DisplayValue(DialogVariableCondition condition)
         {
-            Value = (condition.Comparison != ConditionComparison.HasValue) ? condition.Value : "";
+            switch (condition.Comparison)
+            {
+                case ConditionComparison.HasValue:
+                    Value = "HasValue";
+                    break;
+                case ConditionComparison.Equals:
+                    if (condition.Value == "")
+                    {
+                        Value = condition.VariableName + " absent";
+                    }
+                    else
+                        Value = condition.Value;
+                    break;
+                default:
+                    break;
+            }
+
             Variable = condition.VariableName;
             Type = DisplayValueType.Variable;
             Attributes = new List<Attribute>();
@@ -143,6 +186,7 @@ namespace dialogtool
             {
                 foreach (var concept in condition.EntityValue.Concepts)
                 {
+
                     if (concept.Synonyms != null && concept.Synonyms.Count > 0)
                     {
                         foreach (var syn in concept.Synonyms)
@@ -153,9 +197,9 @@ namespace dialogtool
                 }
             }
 
-            Attributes.Add(new Attribute("title", synonyms));       
+            Attributes.Add(new Attribute("title", synonyms));
 
-    }
+        }
 
         //Constructor Overload
         public DisplayValue(DialogNode node, AnswerStoreSimulator answerStore)
@@ -199,16 +243,12 @@ namespace dialogtool
                     string reponse = "";
                     int i = 0;
 
-                    //TODO : remonter cette variable (multiple instanciation == HIGH COST)
-                    //var answerStore = new AnswerStoreSimulator("au_assurance.json");
-
                     foreach (var uri in URI)
                     {
 
                         if (answerStore.GetAnswerUnitForMappingUri(uri) != null)
                         {
                             reponse = answerStore.GetAnswerUnitForMappingUri(uri).content.plainText;
-                            //Console.WriteLine("Reponse : " + reponse);
                         }
                         else
                         {
@@ -228,6 +268,7 @@ namespace dialogtool
                     }
 
                     Attributes.Add(new Attribute("title", uriattribute + reponse));
+                    SecondaryInfo = uriattribute + reponse;
 
                     break;
 
@@ -249,6 +290,62 @@ namespace dialogtool
             Value = value;
             Variable = variable;
             Attributes.Add(attribute);
+        }
+
+        public DisplayValue(DialogVariableCondition condition, List<DialogVariableAssignment> assignList)
+        {
+            switch (condition.Comparison)
+            {
+                case ConditionComparison.HasValue:
+                    Value = "HasValue";
+                    break;
+                case ConditionComparison.Equals:
+                    if (condition.Value == "")
+                    {
+                        Value = condition.VariableName + " absent";
+                    }
+                    else
+                        Value = condition.Value;
+                    break;
+                default:
+                    break;
+            }
+
+            Variable = condition.VariableName;
+            Type = DisplayValueType.Assign;
+            Attributes = new List<Attribute>();
+            string synonyms = "";
+
+            if (condition.EntityValue != null && condition.EntityValue.Concepts != null)
+            {
+                foreach (var concept in condition.EntityValue.Concepts)
+                {
+
+                    if (concept.Synonyms != null && concept.Synonyms.Count > 0)
+                    {
+                        foreach (var syn in concept.Synonyms)
+                        {
+                            synonyms = synonyms + syn + "\r\n";
+                        }
+                    }
+                }
+            }
+
+            Attributes.Add(new Attribute("title", synonyms));
+            SecondaryInfo = "";
+
+            foreach (var assign in assignList)
+            {
+                switch (assign.Operator)
+                {
+                    case DialogVariableOperator.SetTo:
+                        SecondaryInfo += assign.VariableName + " positionné à " + assign.Value + "<br>";
+                        break;
+                    default:
+                        break;
+                }
+            }
+
         }
 
 
