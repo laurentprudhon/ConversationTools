@@ -26,7 +26,7 @@ namespace dialogtool
             DialogNodeReferences.Add(dialogNode);
         }
 
-        internal int LineNumber { get; set; }
+        public int LineNumber { get; set; }
     }
 
     public enum DialogNodeType
