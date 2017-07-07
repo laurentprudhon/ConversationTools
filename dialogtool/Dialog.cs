@@ -303,7 +303,7 @@ namespace dialogtool
                 }
                 else
                 {
-                    LogMessage(entityValue.LineNumber, MessageType.InvalidReference, "Entity value " + entityValue.Entity.Name + " > \"" + entityValue.Name + "\" => invalid concept reference : " + conceptId + " (a conflicting concept with the same canonical value but a different id may have been defined before)");
+                    LogMessage(entityValue.LineNumber, MessageType.Info, "Entity value " + entityValue.Entity.Name + " > \"" + entityValue.Name + "\" => (warning) concept reference : " + conceptId + " (a conflicting concept with the same canonical value but a different id may have been defined before)");
                 }
             }
             if (Concepts.ContainsKey(entityValue.CanonicalValue))
