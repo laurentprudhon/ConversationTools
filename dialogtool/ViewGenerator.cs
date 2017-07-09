@@ -244,8 +244,7 @@ namespace dialogtool
                     int i = 0;
 
                     foreach (var uri in URI)
-                    {
-
+                    {                      
                         if (answerStore.GetAnswerUnitForMappingUri(uri) != null)
                         {
                             reponse = answerStore.GetAnswerUnitForMappingUri(uri).content.plainText;
@@ -258,14 +257,23 @@ namespace dialogtool
                         if (i > 0)
                         {
                             uriattribute = uriattribute + "<br>" + "URI :  " + uri + " <br>" + "Réponse : <br>" + reponse;
+                            Value += "<br>" + "<i>" + uri + "</i>";
                         }
                         else
                         {
+                            Value += "<font color = \"#BEBEBE\" size = \"1\" >" + "<br>" + "<i>" + uri + "</i>";
                             uriattribute = "URI : " + uri + "<br>" + "Réponse : <br>" + reponse;
                         }
 
                         i += 1;
                     }
+
+                    if (i>0)
+                    {
+                        Value += "</font>";
+                    }
+
+
 
                     Attributes.Add(new Attribute("title", uriattribute + reponse));
                     SecondaryInfo = uriattribute + reponse;

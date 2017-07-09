@@ -10,14 +10,12 @@ namespace dialogtool
         //Entity = key
         //Color = value
         private static Dictionary<string, string> EntityColor = new Dictionary<string, string>();
-        private static int numberAnswer;
 
         public static void Write(Dialog dialog, string sourceFilePath, string answerstoreFile)
         {
 
             ViewGenerator viewGenerator = new ViewGenerator(dialog, answerstoreFile);
             GetColorCode(dialog);
-            numberAnswer = 0;
 
             var settings = new XmlWriterSettings();
             settings.Indent = true;
@@ -114,11 +112,9 @@ namespace dialogtool
 
                         xw.WriteAttributeString("color", GetColor(value));
 
-                        //If it's an answer, we count it to identify the answer node
                         if (value.Type == DisplayValueType.Answer)
                         {
-                            numberAnswer += 1;
-                            xw.WriteString(value.Value + numberAnswer.ToString());
+                            xw.WriteRaw(value.Value);
                         }
                         else
                         {
