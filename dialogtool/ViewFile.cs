@@ -10,17 +10,20 @@ namespace dialogtool
         //Entity = key
         //Color = value
         private static Dictionary<string, string> EntityColor = new Dictionary<string, string>();
+        private static int numberAnswer;
 
         public static void Write(Dialog dialog, string sourceFilePath, string answerstoreFile)
         {
 
             ViewGenerator viewGenerator = new ViewGenerator(dialog, answerstoreFile);
             GetColorCode(dialog);
+            numberAnswer = 0;
 
             var settings = new XmlWriterSettings();
             settings.Indent = true;
             settings.IndentChars = "   ";
             settings.OmitXmlDeclaration = true;
+
 
             using (var xw = XmlWriter.Create(sourceFilePath + ".html", settings))
             {
@@ -30,6 +33,12 @@ namespace dialogtool
                 WriteCSS(xw);
 
                 xw.WriteStartElement("body");
+
+                //bouton de visualisation des URI
+                xw.WriteStartElement("button");
+                xw.WriteAttributeString("onclick", "affichageLignes()");
+                xw.WriteString("Afficher / Masquer les URI");
+                xw.WriteEndElement(); // font
 
                 foreach (var intent in viewGenerator.Intents)
                 {
@@ -66,6 +75,9 @@ namespace dialogtool
                 }
 
                 xw.WriteEndElement(); // body
+
+                WriteJS(xw, numberAnswer);
+
                 xw.WriteEndElement(); // html
             }
 
@@ -114,7 +126,9 @@ namespace dialogtool
 
                         if (value.Type == DisplayValueType.Answer)
                         {
+                            numberAnswer += 1;
                             xw.WriteRaw(value.Value);
+                            xw.WriteRaw("<div id=\"answer" + numberAnswer + "\" style=\"display: none\" >" + value.HiddenInfo + "</div>");
                         }
                         else
                         {
@@ -246,6 +260,15 @@ namespace dialogtool
             xw.WriteString(".tooltip { position: relative; display: inline-block; border-bottom: 1px dotted black;}.tooltip .tooltiptext {visibility: hidden;width: 900px;background-color: #CEE3F6;color: #141907;padding: 5px 0;border-radius: 6px;position: absolute;z-index: 1;}.tooltip:hover .tooltiptext {visibility: visible;}");
             xw.WriteEndElement(); //style
             
+        }
+
+        private static void WriteJS(XmlWriter xw, int NumberAnswer)
+        {
+
+            xw.WriteStartElement("script");
+            xw.WriteRaw("function affichageLignes() {var i;for (i = 1; i <=" + NumberAnswer.ToString() + "; i++) {if (document.getElementById(\"answer\"+i).style.display == 'none') {document.getElementById(\"answer\"+i).style.display = 'inline';} else {document.getElementById(\"answer\"+i).style.display = 'none';}}}");
+            xw.WriteEndElement(); //style
+
         }
 
         //TrimEnd() overload using a string instead of a char[]

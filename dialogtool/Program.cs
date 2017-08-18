@@ -388,7 +388,7 @@ namespace dialogtool
                 {
                     foreach (var mappingUri in fatHeadAnswers.MappingUris)
                     {
-                        if (!mappingURISet.Contains(mappingUri))
+                        if (!mappingURISet.Contains(mappingUri) && mappingUri != "")
                         {
                             mappingURISet.Add(mappingUri);
                             sw.WriteLine(dialogNode.LineNumber + ";" + mappingUri);

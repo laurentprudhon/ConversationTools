@@ -156,7 +156,10 @@ namespace dialogtool
         public string Variable { get;  set; }
         public List<Attribute> Attributes { get; set; }
         public DisplayValueType Type { get; set; }
+        //JS tooltip text
         public string SecondaryInfo { get; set; }
+        //Extra Hide/display JS info
+        public string HiddenInfo { get; set; }
 
         public DisplayValue(DialogVariableCondition condition)
         {
@@ -256,13 +259,13 @@ namespace dialogtool
 
                         if (i > 0)
                         {
-                            uriattribute = uriattribute + "<br>" + "URI :  " + uri + " <br>" + "Réponse : <br>" + reponse;
-                            Value += "<br>" + "<i>" + uri + "</i>";
+                            uriattribute += "<br>" + "URI :  " + uri + " <br>" + "Réponse : <br>" + reponse;
+                            HiddenInfo += "<br>" + "<i>" + uri + "</i>";
                         }
                         else
                         {
-                            Value += "<font color = \"#BEBEBE\" size = \"1\" >" + "<br>" + "<i>" + uri + "</i>";
-                            uriattribute = "URI : " + uri + "<br>" + "Réponse : <br>" + reponse;
+                            HiddenInfo += "<font color = \"#808080\" size = \"2\" >" + "<br>" + "<i>" + uri + "</i>";
+                            uriattribute = "<font size = \"2\" >" +  "URI : " + uri + "<br>" + "Réponse : <br>" + reponse;
                         }
 
                         i += 1;
@@ -270,7 +273,8 @@ namespace dialogtool
 
                     if (i>0)
                     {
-                        Value += "</font>";
+                        uriattribute += "</font>";
+                        HiddenInfo += "</font>";
                     }
 
 
@@ -370,5 +374,6 @@ namespace dialogtool
         }
 
     }
+
 }
 

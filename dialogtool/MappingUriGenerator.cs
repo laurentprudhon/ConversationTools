@@ -170,6 +170,10 @@ namespace dialogtool
                                 {
                                     // Mapping URI not allowed, because one of its entity value is not supported for the current federation group
                                     // => exit the loop
+                                    // Delete the corresponding URI
+                                    result[cnt] = "";
+                                    cnt -= 1;
+                                    count -= 1;
                                     break;
                                 }
                             }
