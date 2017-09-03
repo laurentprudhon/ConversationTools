@@ -15,6 +15,7 @@ namespace dialogtool
             check,
             view,
             answers,
+            concepts,
             debug,
             compare,
             internaltest
@@ -40,6 +41,9 @@ namespace dialogtool
             Console.WriteLine();
             Console.WriteLine(@"dialogtool answers input\savings_0703.xml");
             Console.WriteLine(@">  extracts answers mapping URIs from dialog => result\savings_0703.answers.csv");
+            Console.WriteLine();
+            Console.WriteLine(@"dialogtool concepts input\savings_0703.xml");
+            Console.WriteLine(@">  extracts concepts values and synonyms from dialog => result\savings_0703.concepts.csv");
             Console.WriteLine();
             Console.WriteLine(@"dialogtool debug input\savings_0703.xml input\questions1.csv");
             Console.WriteLine(@">  explains dialog behavior => result\savings_0703.questions1.debug.html");
@@ -80,6 +84,9 @@ namespace dialogtool
                     case "answers":
                         dialogCommand = DialogToolCommands.answers;
                         break;
+                    case "concepts":
+                        dialogCommand = DialogToolCommands.concepts;
+                        break;
                     case "debug":
                         dialogCommand = DialogToolCommands.debug;
                         break;
@@ -103,6 +110,8 @@ namespace dialogtool
                     case DialogToolCommands.check:
                     case DialogToolCommands.answers:
                     case DialogToolCommands.internaltest:
+                    case DialogToolCommands.concepts:
+
                         if (args.Length != 2)
                         {
                             Console.WriteLine("ERROR : one parameter expected for dialogtool command \"" + command + "\"");
@@ -198,6 +207,9 @@ namespace dialogtool
                         break;
                     case DialogToolCommands.answers:
                         GenerateAnswersMappingURIs(fileInfo1);
+                        break;
+                    case DialogToolCommands.concepts:
+                        GenerateConcepts(fileInfo1);
                         break;
                     case DialogToolCommands.debug:
                         DebugDialogBehavior(fileInfo1, fileInfo2);
@@ -376,7 +388,7 @@ namespace dialogtool
                 {
                     foreach (var mappingUri in fatHeadAnswers.MappingUris)
                     {
-                        if (!mappingURISet.Contains(mappingUri))
+                        if (!mappingURISet.Contains(mappingUri) && mappingUri != "")
                         {
                             mappingURISet.Add(mappingUri);
                             sw.WriteLine(dialogNode.LineNumber + ";" + mappingUri);
@@ -391,6 +403,44 @@ namespace dialogtool
                     WriteAnswers(sw, childNode, mappingURISet);
                 }
             }
+        }
+
+        private static void GenerateConcepts(FileInfo sourceOrDialogFileInfo)
+        {
+            Console.WriteLine("Generate Concept values and synonyms :");
+            Console.WriteLine();
+
+            // Load dialog file
+            string sourceOrDialogFileName;
+            Dialog dialog = LoadDialogFile(sourceOrDialogFileInfo, out sourceOrDialogFileName);
+
+            // Write answers mapping URIs file
+            var mappingFilePath = @"result\" + sourceOrDialogFileName + ".Concepts.csv";
+            Console.Write("Writing " + mappingFilePath + " ... ");
+            HashSet<string> mappingURISet = new HashSet<string>();
+            int i = 0;
+            using (StreamWriter sw = new StreamWriter(mappingFilePath, false, Encoding.GetEncoding("iso8859-1")))
+            {
+                foreach (var concepts in dialog.Concepts.Values)
+                {
+                    foreach (var synonym in concepts.Synonyms)
+                    {
+                        if (concepts.EntityValueReferences != null)
+                        {
+                            foreach (var entityval in concepts.EntityValueReferences)
+                            {
+                                sw.WriteLine(entityval.Entity.Name + ";" + concepts.CanonicalValue + ";" + synonym);
+                            }
+                        }
+                    }
+                    i += 1;
+                }
+            }
+
+            Console.WriteLine("OK");
+            Console.WriteLine("");
+            Console.WriteLine("=> generated " + i + " Canonical concept values");
+            Console.WriteLine("");
         }
 
         private static void DebugDialogBehavior(FileInfo sourceOrDialogFileInfo, FileInfo annotatedQuestionsFileInfo)

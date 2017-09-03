@@ -156,7 +156,10 @@ namespace dialogtool
         public string Variable { get;  set; }
         public List<Attribute> Attributes { get; set; }
         public DisplayValueType Type { get; set; }
+        //JS tooltip text
         public string SecondaryInfo { get; set; }
+        //Extra Hide/display JS info
+        public string HiddenInfo { get; set; }
 
         public DisplayValue(DialogVariableCondition condition)
         {
@@ -244,8 +247,7 @@ namespace dialogtool
                     int i = 0;
 
                     foreach (var uri in URI)
-                    {
-
+                    {                      
                         if (answerStore.GetAnswerUnitForMappingUri(uri) != null)
                         {
                             reponse = answerStore.GetAnswerUnitForMappingUri(uri).content.plainText;
@@ -257,15 +259,25 @@ namespace dialogtool
 
                         if (i > 0)
                         {
-                            uriattribute = uriattribute + "<br>" + "URI :  " + uri + " <br>" + "Réponse : <br>" + reponse;
+                            uriattribute += "<br>" + "URI :  " + uri + " <br>" + "Réponse : <br>" + reponse;
+                            HiddenInfo += "<br>" + "<i>" + uri + "</i>";
                         }
                         else
                         {
-                            uriattribute = "URI : " + uri + "<br>" + "Réponse : <br>" + reponse;
+                            HiddenInfo += "<font color = \"#808080\" size = \"2\" >" + "<br>" + "<i>" + uri + "</i>";
+                            uriattribute = "<font size = \"2\" >" +  "URI : " + uri + "<br>" + "Réponse : <br>" + reponse;
                         }
 
                         i += 1;
                     }
+
+                    if (i>0)
+                    {
+                        uriattribute += "</font>";
+                        HiddenInfo += "</font>";
+                    }
+
+
 
                     Attributes.Add(new Attribute("title", uriattribute + reponse));
                     SecondaryInfo = uriattribute + reponse;
@@ -362,5 +374,6 @@ namespace dialogtool
         }
 
     }
+
 }
 
